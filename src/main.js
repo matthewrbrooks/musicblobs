@@ -1,4 +1,6 @@
 import './style.css';
+import { gate } from './gate.js';
+await gate();
 import { renderer, scene, camera, sceneClock, blobReg, drumBlob, keyBlob, faceBlob, updateNameLabels } from './scene.js';
 import { updatePhysics } from './physics/physics.js';
 import { setFireEventCallback, updateButtons } from './loop.js';

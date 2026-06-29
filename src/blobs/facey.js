@@ -32,7 +32,7 @@ export function buildFacey() {
     eye.position.copy(pos);
     eye.userData = { kind: 'face-vocal', partIdx: i };
     group.add(eye);
-    faceParts.push({ mesh: eye, label: FACE_ZONES[i], color: FACE_COLORS[i] });
+    faceParts.push({ mesh: eye, label: FACE_ZONES[i], color: FACE_COLORS[i], baseEI: 2 });
     const pg = new THREE.SphereGeometry(0.08, 10, 10);
     const pm = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x330066, emissiveIntensity: 1 });
     const pupil = new THREE.Mesh(pg, pm);
@@ -58,7 +58,7 @@ export function buildFacey() {
   nose.position.set(0, 0.04, 1.18);
   nose.userData = { kind: 'face-nose', partIdx: 2 };
   group.add(nose);
-  faceParts.push({ mesh: nose, label: FACE_ZONES[2], color: FACE_COLORS[2] });
+  faceParts.push({ mesh: nose, label: FACE_ZONES[2], color: FACE_COLORS[2], baseEI: 0.7 });
 
   // Mouth
   const mouthGeo = new THREE.SphereGeometry(0.15, 24, 16);
@@ -71,7 +71,7 @@ export function buildFacey() {
   mouth.scale.set(MOUTH_REST_SCALE.x, MOUTH_REST_SCALE.y, MOUTH_REST_SCALE.z);
   mouth.userData = { kind: 'face-mouth', partIdx: 3 };
   group.add(mouth);
-  faceParts.push({ mesh: mouth, label: FACE_ZONES[3], color: FACE_COLORS[3] });
+  faceParts.push({ mesh: mouth, label: FACE_ZONES[3], color: FACE_COLORS[3], baseEI: 1.5 });
 
   // Forehead gem
   const fg = new THREE.OctahedronGeometry(0.14, 0);
@@ -80,7 +80,7 @@ export function buildFacey() {
   forehead.position.set(0, 0.88, 1.05);
   forehead.userData = { kind: 'face-vocal', partIdx: 4 };
   group.add(forehead);
-  faceParts.push({ mesh: forehead, label: FACE_ZONES[4], color: FACE_COLORS[4] });
+  faceParts.push({ mesh: forehead, label: FACE_ZONES[4], color: FACE_COLORS[4], baseEI: 4 });
 
   // Cheeks
   const chkColors = [0xffee44, 0x44ccff];
@@ -91,7 +91,7 @@ export function buildFacey() {
     chk.position.set(x, y, 0.95);
     chk.userData = { kind: 'face-vocal', partIdx: 5 + i };
     group.add(chk);
-    faceParts.push({ mesh: chk, label: FACE_ZONES[5 + i], color: FACE_COLORS[5 + i] });
+    faceParts.push({ mesh: chk, label: FACE_ZONES[5 + i], color: FACE_COLORS[5 + i], baseEI: 1.2 });
   });
 
   // Ears
@@ -131,7 +131,7 @@ export function buildFacey() {
     earGroup.rotation.z = side * 0.2;
     group.add(earGroup);
     earMeshes.push(outerEar);
-    faceParts.push({ mesh: outerEar, label: FACE_ZONES[7 + i], color: FACE_COLORS[7 + i] });
+    faceParts.push({ mesh: outerEar, label: FACE_ZONES[7 + i], color: FACE_COLORS[7 + i], baseEI: 1.4 });
   });
 
   group.scale.setScalar(0.5);
@@ -141,10 +141,12 @@ export function buildFacey() {
     pulse(zoneIdx) {
       const p = faceParts[zoneIdx];
       if (!p || zoneIdx === 3) return;
-      p.mesh.material.emissiveIntensity *= 3;
-      const os = p.mesh.scale.x;
-      p.mesh.scale.setScalar(os * 1.35);
-      setTimeout(() => { p.mesh.material.emissiveIntensity /= 3; p.mesh.scale.setScalar(os); }, 180);
+      p.mesh.material.emissiveIntensity = p.baseEI * 3;
+      p.mesh.scale.setScalar(1.35);
+      setTimeout(() => {
+        p.mesh.material.emissiveIntensity = p.baseEI;
+        p.mesh.scale.setScalar(1);
+      }, 180);
     },
     pulseNose() {
       const m = nose.material;
