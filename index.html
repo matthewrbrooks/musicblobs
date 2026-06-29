@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MusicBlobs</title>
+<link rel="stylesheet" href="/src/style.css"/>
+</head>
+<body>
+
+<div id="topbar">
+  <span id="logo">MusicBlobs</span>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Tempo</span>
+    <div id="tempo-wrap">
+      <input type="range" id="tempo-slider" min="60" max="180" value="90">
+      <span id="tempo-val">90 BPM</span>
+    </div>
+  </div>
+
+  <div class="ctrl-group" id="wonk-group">
+    <span class="ctrl-label">Wonk</span>
+    <div class="grid-picker">
+      <button data-grid="16" class="active">1/16</button>
+      <button data-grid="8">1/8</button>
+      <button data-grid="4">1/4</button>
+    </div>
+    <div id="wonk-wrap">
+      <span class="wonk-end">tight</span>
+      <input type="range" id="wonk-slider" min="-100" max="100" value="0" step="1">
+      <span class="wonk-end">loose</span>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Move</span>
+    <div class="grid-picker" id="move-picker">
+      <button data-move="bounce" class="active">Bounce</button>
+      <button data-move="avoid">Avoid</button>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <div id="loop-bar-wrap"><div id="loop-bar"></div></div>
+    <button id="rec-btn">● REC</button>
+    <button id="play-btn" class="disabled">▶ PLAY</button>
+    <button id="clear-btn">✕ Clear</button>
+  </div>
+</div>
+
+<div id="stage">
+  <canvas id="stage-canvas"></canvas>
+  <div class="hit-flash" id="flash"></div>
+  <div class="countdown" id="face-countdown"></div>
+  <div class="sample-indicator" id="sample-indicator">no sample</div>
+  <div class="blob-name" id="name-drum">Drumbo</div>
+  <div class="blob-name" id="name-key">Keebo</div>
+  <div class="blob-name" id="name-face">Facey</div>
+</div>
+
+<div id="hint">tap musical parts to play · drag blob bodies to move them · ● rec to record (4-beat count-in) · ▶ play to loop</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

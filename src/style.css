@@ -1,0 +1,332 @@
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#08050f;
+  font-family:'Courier New',monospace;
+  color:#e0d8ff;
+  overflow:hidden;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── Top bar ── */
+#topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 20px;
+  background:rgba(255,255,255,0.03);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  flex-shrink:0;
+  z-index:10;
+}
+#logo{
+  font-size:1.3rem;
+  letter-spacing:0.18em;
+  background:linear-gradient(90deg,#b070ff,#70c0ff,#ff70b0);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.ctrl-group{display:flex;align-items:center;gap:14px}
+.ctrl-label{font-size:0.65rem;letter-spacing:0.12em;color:#8877bb;text-transform:uppercase}
+
+/* Tempo knob */
+#tempo-wrap{display:flex;align-items:center;gap:8px}
+#tempo-val{font-size:0.9rem;color:#c0a8ff;min-width:38px;text-align:right}
+input[type=range]{
+  -webkit-appearance:none;
+  width:90px;height:3px;
+  background:rgba(180,140,255,0.25);
+  border-radius:2px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:14px;height:14px;
+  border-radius:50%;
+  background:#b070ff;
+  cursor:pointer;
+  box-shadow:0 0 8px #b070ff88;
+}
+
+/* Wonk control */
+#wonk-group{gap:10px}
+#wonk-wrap{display:flex;align-items:center;gap:7px;position:relative}
+.wonk-end{
+  font-size:0.55rem;
+  letter-spacing:0.1em;
+  color:#776699;
+  text-transform:uppercase;
+}
+#wonk-slider{
+  width:110px;
+  background:linear-gradient(to right,
+    rgba(120,200,255,0.35) 0%,
+    rgba(120,200,255,0.35) 48%,
+    rgba(255,255,255,0.5) 49%,
+    rgba(255,255,255,0.5) 51%,
+    rgba(255,140,80,0.35) 52%,
+    rgba(255,140,80,0.35) 100%);
+}
+#wonk-slider::-webkit-slider-thumb{
+  background:#fff;
+  box-shadow:0 0 10px #ffffffaa;
+}
+.grid-picker{display:flex;gap:2px}
+.grid-picker button{
+  padding:3px 7px;
+  font-size:0.6rem;
+  font-family:'Courier New',monospace;
+  background:transparent;
+  border:1px solid rgba(180,140,255,0.22);
+  color:#8877bb;
+  cursor:pointer;
+  letter-spacing:0.05em;
+  border-radius:3px;
+  transition:all 0.15s;
+}
+.grid-picker button:hover{background:rgba(180,140,255,0.1);color:#c0a8ff}
+.grid-picker button.active{
+  border-color:#b070ff;
+  color:#c0a8ff;
+  background:rgba(180,140,255,0.18);
+  box-shadow:0 0 6px #b070ff44;
+}
+
+/* Record / Play buttons */
+#rec-btn, #play-btn{
+  padding:6px 14px;
+  border-radius:20px;
+  font-family:'Courier New',monospace;
+  font-size:0.75rem;
+  letter-spacing:0.1em;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+  min-width:74px;
+  text-align:center;
+}
+#rec-btn{
+  border:1px solid rgba(255,100,100,0.4);
+  background:rgba(255,60,60,0.1);
+  color:#ff9090;
+}
+#rec-btn:hover{background:rgba(255,60,60,0.22);border-color:rgba(255,100,100,0.7)}
+#rec-btn.recording{
+  background:rgba(255,40,40,0.3);
+  border-color:#ff4444;
+  color:#ff4444;
+  box-shadow:0 0 12px #ff444466;
+  animation:recpulse 0.8s ease-in-out infinite;
+}
+@keyframes recpulse{0%,100%{box-shadow:0 0 8px #ff444444}50%{box-shadow:0 0 20px #ff4444aa}}
+#rec-btn.counting{
+  background:rgba(255,160,60,0.18);
+  border-color:#ffaa44;
+  color:#ffaa44;
+  box-shadow:0 0 12px #ffaa4466;
+}
+
+#play-btn{
+  border:1px solid rgba(100,255,150,0.4);
+  background:rgba(100,255,150,0.1);
+  color:#88ff9c;
+}
+#play-btn:hover{background:rgba(100,255,150,0.22);border-color:rgba(100,255,150,0.7)}
+#play-btn.playing{
+  background:rgba(100,255,150,0.3);
+  border-color:#44ff88;
+  color:#44ff88;
+  box-shadow:0 0 12px #44ff8866;
+  animation:playpulse 1.2s ease-in-out infinite;
+}
+@keyframes playpulse{0%,100%{box-shadow:0 0 8px #44ff8844}50%{box-shadow:0 0 18px #44ff88aa}}
+#play-btn.disabled{
+  opacity:0.32;
+  cursor:not-allowed;
+  border-color:rgba(100,255,150,0.2);
+  background:transparent;
+}
+#play-btn.disabled:hover{
+  background:transparent;
+  border-color:rgba(100,255,150,0.2);
+}
+
+/* Loop progress bar */
+#loop-bar-wrap{
+  width:120px;height:4px;
+  background:rgba(255,255,255,0.08);
+  border-radius:2px;overflow:hidden;
+}
+#loop-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#b070ff,#70c0ff);
+  border-radius:2px;
+  transition:width 0.05s linear;
+}
+
+/* Clear button */
+#clear-btn{
+  padding:6px 12px;
+  border-radius:20px;
+  border:1px solid rgba(180,140,255,0.25);
+  background:transparent;
+  color:#8877bb;
+  font-family:'Courier New',monospace;
+  font-size:0.7rem;
+  letter-spacing:0.1em;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+#clear-btn:hover{border-color:#b070ff55;color:#c0a8ff}
+
+/* ── Stage ── */
+#stage{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+}
+#stage-canvas{
+  width:100%;
+  height:100%;
+  display:block;
+  cursor:grab;
+}
+#stage-canvas:active{cursor:grabbing}
+
+/* Hit flash overlay */
+.hit-flash{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.08s;
+}
+.hit-flash.active{opacity:1;transition:opacity 0s}
+
+/* Floating blob name labels (positioned in JS each frame) */
+.blob-name{
+  position:absolute;
+  font-size:0.6rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:rgba(200,180,255,0.4);
+  pointer-events:none;
+  transform:translate(-50%,0);
+  transition:opacity 0.2s;
+  white-space:nowrap;
+  text-shadow:0 0 8px rgba(0,0,0,0.8);
+}
+
+/* Pad labels that float above tapped zones */
+.tap-label{
+  position:absolute;
+  padding:3px 9px;
+  border-radius:12px;
+  font-size:0.65rem;
+  letter-spacing:0.1em;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(0px);
+  transition:opacity 0.3s, transform 0.3s;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.tap-label.show{
+  opacity:1;
+  transform:translateY(-22px);
+}
+
+/* Facey: countdown overlay */
+.countdown{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Courier New',monospace;
+  font-size:5rem;
+  font-weight:bold;
+  color:#ff66cc;
+  text-shadow:0 0 25px #ff66cc, 0 0 50px #ff66cc88;
+  pointer-events:none;
+  opacity:0;
+  z-index:8;
+}
+.countdown.show{opacity:1}
+.countdown.rec{
+  color:#ff3344;
+  text-shadow:0 0 25px #ff3344, 0 0 50px #ff334488;
+  font-size:2.6rem;
+  animation:recblink 0.6s ease-in-out infinite;
+}
+@keyframes recblink{0%,100%{opacity:0.6}50%{opacity:1}}
+
+/* Facey: sample indicator */
+.sample-indicator{
+  position:absolute;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:0.6rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:rgba(255,180,220,0.35);
+  padding:3px 10px;
+  border:1px solid rgba(255,180,220,0.15);
+  border-radius:10px;
+  background:rgba(255,180,220,0.04);
+  pointer-events:none;
+  z-index:7;
+  transition:all 0.3s;
+}
+.sample-indicator.loaded{
+  color:#ff7733;
+  border-color:#ff773366;
+  background:rgba(255,119,51,0.12);
+  box-shadow:0 0 12px #ff773344;
+}
+
+/* Soundwave ripple from tap point */
+.ripple{
+  position:fixed;
+  pointer-events:none;
+  border-radius:50%;
+  border-style:solid;
+  transform:translate(-50%,-50%);
+  left:0;top:0;
+  width:9px;height:9px;
+  opacity:0;
+  z-index:50;
+  will-change:transform,opacity;
+}
+.ripple-1{animation:ripple-out-1 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+.ripple-2{animation:ripple-out-2 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+.ripple-3{animation:ripple-out-3 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+
+@keyframes ripple-out-1{
+  0%{width:7px;height:7px;opacity:0.95;border-width:2px}
+  60%{opacity:0.55;border-width:1.5px}
+  100%{width:130px;height:130px;opacity:0;border-width:0.5px}
+}
+@keyframes ripple-out-2{
+  0%{width:7px;height:7px;opacity:0.85;border-width:2px}
+  60%{opacity:0.48;border-width:1.5px}
+  100%{width:95px;height:95px;opacity:0;border-width:0.5px}
+}
+@keyframes ripple-out-3{
+  0%{width:7px;height:7px;opacity:0.75;border-width:2px}
+  60%{opacity:0.4;border-width:1.5px}
+  100%{width:65px;height:65px;opacity:0;border-width:0.5px}
+}
+
+/* ── Bottom hint ── */
+#hint{
+  text-align:center;
+  padding:7px;
+  font-size:0.6rem;
+  letter-spacing:0.14em;
+  color:rgba(180,160,255,0.25);
+  flex-shrink:0;
+}

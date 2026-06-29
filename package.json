@@ -1,0 +1,22 @@
+{
+  "name": "musicblobs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.165.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "allowScripts": {
+    "vite@5.4.21": true,
+    "esbuild@0.21.5": true,
+    "fsevents@2.3.3": true
+  }
+}

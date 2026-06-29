@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MusicBlobs</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#08050f;
+    font-family:'Courier New',monospace;
+    color:#e0d8ff;
+    overflow:hidden;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ── Top bar ── */
+  #topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 20px;
+    background:rgba(255,255,255,0.03);
+    border-bottom:1px solid rgba(255,255,255,0.07);
+    flex-shrink:0;
+    z-index:10;
+  }
+  #logo{
+    font-size:1.3rem;
+    letter-spacing:0.18em;
+    background:linear-gradient(90deg,#b070ff,#70c0ff,#ff70b0);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .ctrl-group{display:flex;align-items:center;gap:14px}
+  .ctrl-label{font-size:0.65rem;letter-spacing:0.12em;color:#8877bb;text-transform:uppercase}
+
+  /* Tempo knob */
+  #tempo-wrap{display:flex;align-items:center;gap:8px}
+  #tempo-val{font-size:0.9rem;color:#c0a8ff;min-width:38px;text-align:right}
+  input[type=range]{
+    -webkit-appearance:none;
+    width:90px;height:3px;
+    background:rgba(180,140,255,0.25);
+    border-radius:2px;outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:14px;height:14px;
+    border-radius:50%;
+    background:#b070ff;
+    cursor:pointer;
+    box-shadow:0 0 8px #b070ff88;
+  }
+
+  /* Wonk control */
+  #wonk-group{gap:10px}
+  #wonk-wrap{display:flex;align-items:center;gap:7px;position:relative}
+  .wonk-end{
+    font-size:0.55rem;
+    letter-spacing:0.1em;
+    color:#776699;
+    text-transform:uppercase;
+  }
+  #wonk-slider{
+    width:110px;
+    background:linear-gradient(to right,
+      rgba(120,200,255,0.35) 0%,
+      rgba(120,200,255,0.35) 48%,
+      rgba(255,255,255,0.5) 49%,
+      rgba(255,255,255,0.5) 51%,
+      rgba(255,140,80,0.35) 52%,
+      rgba(255,140,80,0.35) 100%);
+  }
+  #wonk-slider::-webkit-slider-thumb{
+    background:#fff;
+    box-shadow:0 0 10px #ffffffaa;
+  }
+  .grid-picker{display:flex;gap:2px}
+  .grid-picker button{
+    padding:3px 7px;
+    font-size:0.6rem;
+    font-family:'Courier New',monospace;
+    background:transparent;
+    border:1px solid rgba(180,140,255,0.22);
+    color:#8877bb;
+    cursor:pointer;
+    letter-spacing:0.05em;
+    border-radius:3px;
+    transition:all 0.15s;
+  }
+  .grid-picker button:hover{background:rgba(180,140,255,0.1);color:#c0a8ff}
+  .grid-picker button.active{
+    border-color:#b070ff;
+    color:#c0a8ff;
+    background:rgba(180,140,255,0.18);
+    box-shadow:0 0 6px #b070ff44;
+  }
+
+  /* Record / Play buttons */
+  #rec-btn, #play-btn{
+    padding:6px 14px;
+    border-radius:20px;
+    font-family:'Courier New',monospace;
+    font-size:0.75rem;
+    letter-spacing:0.1em;
+    cursor:pointer;
+    transition:all 0.2s;
+    text-transform:uppercase;
+    min-width:74px;
+    text-align:center;
+  }
+  #rec-btn{
+    border:1px solid rgba(255,100,100,0.4);
+    background:rgba(255,60,60,0.1);
+    color:#ff9090;
+  }
+  #rec-btn:hover{background:rgba(255,60,60,0.22);border-color:rgba(255,100,100,0.7)}
+  #rec-btn.recording{
+    background:rgba(255,40,40,0.3);
+    border-color:#ff4444;
+    color:#ff4444;
+    box-shadow:0 0 12px #ff444466;
+    animation:recpulse 0.8s ease-in-out infinite;
+  }
+  @keyframes recpulse{0%,100%{box-shadow:0 0 8px #ff444444}50%{box-shadow:0 0 20px #ff4444aa}}
+  #rec-btn.counting{
+    background:rgba(255,160,60,0.18);
+    border-color:#ffaa44;
+    color:#ffaa44;
+    box-shadow:0 0 12px #ffaa4466;
+  }
+
+  #play-btn{
+    border:1px solid rgba(100,255,150,0.4);
+    background:rgba(100,255,150,0.1);
+    color:#88ff9c;
+  }
+  #play-btn:hover{background:rgba(100,255,150,0.22);border-color:rgba(100,255,150,0.7)}
+  #play-btn.playing{
+    background:rgba(100,255,150,0.3);
+    border-color:#44ff88;
+    color:#44ff88;
+    box-shadow:0 0 12px #44ff8866;
+    animation:playpulse 1.2s ease-in-out infinite;
+  }
+  @keyframes playpulse{0%,100%{box-shadow:0 0 8px #44ff8844}50%{box-shadow:0 0 18px #44ff88aa}}
+  #play-btn.disabled{
+    opacity:0.32;
+    cursor:not-allowed;
+    border-color:rgba(100,255,150,0.2);
+    background:transparent;
+  }
+  #play-btn.disabled:hover{
+    background:transparent;
+    border-color:rgba(100,255,150,0.2);
+  }
+
+  /* Loop progress bar */
+  #loop-bar-wrap{
+    width:120px;height:4px;
+    background:rgba(255,255,255,0.08);
+    border-radius:2px;overflow:hidden;
+  }
+  #loop-bar{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,#b070ff,#70c0ff);
+    border-radius:2px;
+    transition:width 0.05s linear;
+  }
+
+  /* Clear button */
+  #clear-btn{
+    padding:6px 12px;
+    border-radius:20px;
+    border:1px solid rgba(180,140,255,0.25);
+    background:transparent;
+    color:#8877bb;
+    font-family:'Courier New',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.1em;
+    cursor:pointer;
+    transition:all 0.2s;
+    text-transform:uppercase;
+  }
+  #clear-btn:hover{border-color:#b070ff55;color:#c0a8ff}
+
+  /* ── Stage ── */
+  #stage{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+  }
+  #stage-canvas{
+    width:100%;
+    height:100%;
+    display:block;
+    cursor:grab;
+  }
+  #stage-canvas:active{cursor:grabbing}
+
+  /* Hit flash overlay */
+  .hit-flash{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 0.08s;
+  }
+  .hit-flash.active{opacity:1;transition:opacity 0s}
+
+  /* Floating blob name labels (positioned in JS each frame) */
+  .blob-name{
+    position:absolute;
+    font-size:0.6rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:rgba(200,180,255,0.4);
+    pointer-events:none;
+    transform:translate(-50%,0);
+    transition:opacity 0.2s;
+    white-space:nowrap;
+    text-shadow:0 0 8px rgba(0,0,0,0.8);
+  }
+
+  /* Pad labels that float above tapped zones */
+  .tap-label{
+    position:absolute;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:0.65rem;
+    letter-spacing:0.1em;
+    pointer-events:none;
+    opacity:0;
+    transform:translateY(0px);
+    transition:opacity 0.3s, transform 0.3s;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .tap-label.show{
+    opacity:1;
+    transform:translateY(-22px);
+  }
+
+  /* Facey: countdown overlay */
+  .countdown{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Courier New',monospace;
+    font-size:5rem;
+    font-weight:bold;
+    color:#ff66cc;
+    text-shadow:0 0 25px #ff66cc, 0 0 50px #ff66cc88;
+    pointer-events:none;
+    opacity:0;
+    z-index:8;
+  }
+  .countdown.show{opacity:1}
+  .countdown.rec{
+    color:#ff3344;
+    text-shadow:0 0 25px #ff3344, 0 0 50px #ff334488;
+    font-size:2.6rem;
+    animation:recblink 0.6s ease-in-out infinite;
+  }
+  @keyframes recblink{0%,100%{opacity:0.6}50%{opacity:1}}
+
+  /* Facey: sample indicator */
+  .sample-indicator{
+    position:absolute;
+    top:14px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:0.6rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:rgba(255,180,220,0.35);
+    padding:3px 10px;
+    border:1px solid rgba(255,180,220,0.15);
+    border-radius:10px;
+    background:rgba(255,180,220,0.04);
+    pointer-events:none;
+    z-index:7;
+    transition:all 0.3s;
+  }
+  .sample-indicator.loaded{
+    color:#ff7733;
+    border-color:#ff773366;
+    background:rgba(255,119,51,0.12);
+    box-shadow:0 0 12px #ff773344;
+  }
+
+  /* Soundwave ripple from tap point — later rings travel less far,
+     so with the same duration they have lower initial velocity */
+  .ripple{
+    position:fixed;
+    pointer-events:none;
+    border-radius:50%;
+    border-style:solid;
+    transform:translate(-50%,-50%);
+    left:0;top:0;
+    width:9px;height:9px;
+    opacity:0;
+    z-index:50;
+    will-change:transform,opacity;
+  }
+  .ripple-1{animation:ripple-out-1 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+  .ripple-2{animation:ripple-out-2 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+  .ripple-3{animation:ripple-out-3 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
+
+  @keyframes ripple-out-1{
+    0%{width:7px;height:7px;opacity:0.95;border-width:2px}
+    60%{opacity:0.55;border-width:1.5px}
+    100%{width:130px;height:130px;opacity:0;border-width:0.5px}
+  }
+  @keyframes ripple-out-2{
+    0%{width:7px;height:7px;opacity:0.85;border-width:2px}
+    60%{opacity:0.48;border-width:1.5px}
+    100%{width:95px;height:95px;opacity:0;border-width:0.5px}
+  }
+  @keyframes ripple-out-3{
+    0%{width:7px;height:7px;opacity:0.75;border-width:2px}
+    60%{opacity:0.4;border-width:1.5px}
+    100%{width:65px;height:65px;opacity:0;border-width:0.5px}
+  }
+
+  /* ── Bottom hint ── */
+  #hint{
+    text-align:center;
+    padding:7px;
+    font-size:0.6rem;
+    letter-spacing:0.14em;
+    color:rgba(180,160,255,0.25);
+    flex-shrink:0;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span id="logo">MusicBlobs</span>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Tempo</span>
+    <div id="tempo-wrap">
+      <input type="range" id="tempo-slider" min="60" max="180" value="90"
+        oninput="setTempo(+this.value)">
+      <span id="tempo-val">90 BPM</span>
+    </div>
+  </div>
+
+  <div class="ctrl-group" id="wonk-group">
+    <span class="ctrl-label">Wonk</span>
+    <div class="grid-picker">
+      <button data-grid="16" onclick="setQuantizeGrid(16)" class="active">1/16</button>
+      <button data-grid="8" onclick="setQuantizeGrid(8)">1/8</button>
+      <button data-grid="4" onclick="setQuantizeGrid(4)">1/4</button>
+    </div>
+    <div id="wonk-wrap">
+      <span class="wonk-end">tight</span>
+      <input type="range" id="wonk-slider" min="-100" max="100" value="0" step="1"
+        oninput="setWonkiness(+this.value/100)">
+      <span class="wonk-end">loose</span>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Move</span>
+    <div class="grid-picker" id="move-picker">
+      <button data-move="bounce" onclick="setMoveMode('bounce')" class="active">Bounce</button>
+      <button data-move="avoid" onclick="setMoveMode('avoid')">Avoid</button>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <div id="loop-bar-wrap"><div id="loop-bar"></div></div>
+    <button id="rec-btn" onclick="recBtnClick()">● REC</button>
+    <button id="play-btn" onclick="playBtnClick()" class="disabled">▶ PLAY</button>
+    <button id="clear-btn" onclick="clearLoop()">✕ Clear</button>
+  </div>
+</div>
+
+<!-- STAGE: one shared canvas for all three blobs -->
+<div id="stage">
+  <canvas id="stage-canvas"></canvas>
+  <div class="hit-flash" id="flash"></div>
+  <div class="countdown" id="face-countdown"></div>
+  <div class="sample-indicator" id="sample-indicator">no sample</div>
+  <div class="blob-name" id="name-drum">Drumbo</div>
+  <div class="blob-name" id="name-key">Keebo</div>
+  <div class="blob-name" id="name-face">Facey</div>
+</div>
+
+<div id="hint">tap musical parts to play · drag blob bodies to move them · ● rec to record (4-beat count-in) · ▶ play to loop</div>
+
+<!-- Three.js from CDN -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ═══════════════════════════════════════════════════
+//  AUDIO ENGINE
+// ═══════════════════════════════════════════════════
+let ctx = null;
+function ensureAudio(){
+  if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)();
+  if(ctx.state==='suspended') ctx.resume();
+  return ctx;
+}
+
+// Master reverb (convolver with generated impulse)
+let reverbNode = null;
+function getReverb(){
+  if(reverbNode) return reverbNode;
+  const ac = ensureAudio();
+  const len = ac.sampleRate * 1.4;
+  const buf = ac.createBuffer(2,len,ac.sampleRate);
+  for(let c=0;c<2;c++){
+    const d = buf.getChannelData(c);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len,2.2);
+  }
+  reverbNode = ac.createConvolver();
+  reverbNode.buffer = buf;
+  reverbNode.connect(ac.destination);
+  return reverbNode;
+}
+
+// ── DRUM SOUNDS ──
+const DRUM_COLORS = ['#ff5577','#ff9944','#44ddff','#88ff44'];
+const DRUM_LABELS = ['Kick','Snare','Hat','Clap'];
+
+function playKick(){
+  const ac=ensureAudio();
+  const ps=wonkPitchScale;
+  const osc=ac.createOscillator();
+  const gain=ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.frequency.setValueAtTime(160*ps,ac.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(40*ps,ac.currentTime+0.35);
+  gain.gain.setValueAtTime(1.2,ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.4);
+  osc.start(); osc.stop(ac.currentTime+0.42);
+}
+function playSnare(){
+  const ac=ensureAudio();
+  const ps=wonkPitchScale;
+  // Noise body
+  const buf=ac.createBuffer(1,ac.sampleRate*0.2,ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ac.createBufferSource();
+  src.buffer=buf;
+  const filter=ac.createBiquadFilter();
+  filter.type='bandpass'; filter.frequency.value=2200*ps; filter.Q.value=0.7;
+  const gain=ac.createGain();
+  src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+  gain.gain.setValueAtTime(0.9,ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.18);
+  // Tone
+  const osc=ac.createOscillator();
+  const g2=ac.createGain();
+  osc.frequency.value=200*ps; osc.connect(g2); g2.connect(ac.destination);
+  g2.gain.setValueAtTime(0.4,ac.currentTime);
+  g2.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.12);
+  src.start(); osc.start(); src.stop(ac.currentTime+0.22); osc.stop(ac.currentTime+0.14);
+}
+function playHihat(){
+  const ac=ensureAudio();
+  const ps=wonkPitchScale;
+  const buf=ac.createBuffer(1,ac.sampleRate*0.08,ac.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ac.createBufferSource();
+  src.buffer=buf;
+  const hp=ac.createBiquadFilter();
+  hp.type='highpass'; hp.frequency.value=8000*ps;
+  const gain=ac.createGain();
+  src.connect(hp); hp.connect(gain); gain.connect(ac.destination);
+  gain.gain.setValueAtTime(0.5,ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.07);
+  src.start(); src.stop(ac.currentTime+0.09);
+}
+function playClap(){
+  const ac=ensureAudio();
+  const ps=wonkPitchScale;
+  for(let i=0;i<3;i++){
+    const buf=ac.createBuffer(1,ac.sampleRate*0.05,ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let j=0;j<d.length;j++) d[j]=Math.random()*2-1;
+    const src=ac.createBufferSource();
+    src.buffer=buf;
+    const bp=ac.createBiquadFilter();
+    bp.type='bandpass'; bp.frequency.value=1200*ps; bp.Q.value=0.5;
+    const gain=ac.createGain();
+    const t=ac.currentTime+i*0.018;
+    src.connect(bp); bp.connect(gain); gain.connect(getReverb()); gain.connect(ac.destination);
+    gain.gain.setValueAtTime(0.7,t);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+0.06);
+    src.start(t); src.stop(t+0.08);
+  }
+}
+const DRUM_FNS = [playKick,playSnare,playHihat,playClap];
+
+// ── KEYBOARD SOUNDS (C major) ──
+const NOTE_FREQS = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
+const NOTE_NAMES = ['C','D','E','F','G','A','B','C'];
+const NOTE_COLORS = ['#cc66ff','#9966ff','#6699ff','#44bbff','#44ffcc','#88ff66','#ffee44','#ff8844'];
+
+function playNote(freq){
+  const ac=ensureAudio();
+  const f=freq*wonkPitchScale;
+  const osc=ac.createOscillator();
+  const osc2=ac.createOscillator();
+  const gain=ac.createGain();
+  osc.type='triangle'; osc.frequency.value=f;
+  osc2.type='sine'; osc2.frequency.value=f*2.01;
+  const g2=ac.createGain(); g2.gain.value=0.3;
+  osc.connect(gain); osc2.connect(g2); g2.connect(gain);
+  gain.connect(getReverb()); gain.connect(ac.destination);
+  gain.gain.setValueAtTime(0.0,ac.currentTime);
+  gain.gain.linearRampToValueAtTime(0.55,ac.currentTime+0.012);
+  gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.9);
+  osc.start(); osc2.start(); osc.stop(ac.currentTime+0.95); osc2.stop(ac.currentTime+0.95);
+}
+
+// ── FACE / VOCAL SOUNDS ──
+const FACE_ZONES = ['Left eye','Right eye','Nose','Mouth','Forehead','Left cheek','Right cheek','Lock','Record'];
+const FACE_COLORS = ['#ff66cc','#cc44ff','#ff8844','#33ffaa','#ffffff','#ffee44','#44ccff','#ffdd44','#ff44aa'];
+// Indices that map to a vocal sound (the rest are sample/control parts)
+const VOCAL_INDICES = [0,1,4,5,6];
+
+function playVocal(index){
+  const ac=ensureAudio();
+  const t=ac.currentTime;
+  switch(index%7){
+    case 0: playOoh(ac,t,400); break;
+    case 1: playOoh(ac,t,600); break;
+    case 2: playNoseZap(ac,t); break;
+    case 3: playAah(ac,t); break;
+    case 4: playWow(ac,t); break;
+    case 5: playWeird(ac,t,0); break;
+    case 6: playWeird(ac,t,1); break;
+  }
+}
+function playOoh(ac,t,baseFreq){
+  const ps=wonkPitchScale;
+  const bf=baseFreq*ps;
+  const osc=ac.createOscillator();
+  const gain=ac.createGain();
+  osc.type='sine';
+  osc.frequency.setValueAtTime(bf*0.5,t);
+  osc.frequency.linearRampToValueAtTime(bf,t+0.08);
+  osc.frequency.linearRampToValueAtTime(bf*1.05,t+0.3);
+  osc.frequency.linearRampToValueAtTime(bf*0.97,t+0.6);
+  gain.gain.setValueAtTime(0,t);
+  gain.gain.linearRampToValueAtTime(0.45,t+0.06);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.7);
+  osc.connect(gain); gain.connect(getReverb()); gain.connect(ac.destination);
+  osc.start(t); osc.stop(t+0.75);
+}
+function playAah(ac,t){
+  const ps=wonkPitchScale;
+  const osc=ac.createOscillator();
+  const osc2=ac.createOscillator();
+  const gain=ac.createGain();
+  osc.type='sawtooth'; osc.frequency.value=330*ps;
+  osc2.type='sawtooth'; osc2.frequency.value=331*ps;
+  const lp=ac.createBiquadFilter();
+  lp.type='lowpass'; lp.frequency.setValueAtTime(800,t); lp.frequency.linearRampToValueAtTime(2200,t+0.15);
+  lp.frequency.linearRampToValueAtTime(900,t+0.5);
+  osc.connect(lp); osc2.connect(lp); lp.connect(gain);
+  gain.gain.setValueAtTime(0,t);
+  gain.gain.linearRampToValueAtTime(0.2,t+0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.65);
+  gain.connect(getReverb()); gain.connect(ac.destination);
+  osc.start(t); osc2.start(t); osc.stop(t+0.7); osc2.stop(t+0.7);
+}
+function playNoseZap(ac,t){
+  const ps=wonkPitchScale;
+  const osc=ac.createOscillator();
+  const gain=ac.createGain();
+  osc.type='square';
+  osc.frequency.setValueAtTime(1200*ps,t);
+  osc.frequency.exponentialRampToValueAtTime(60*ps,t+0.25);
+  gain.gain.setValueAtTime(0.3,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.start(t); osc.stop(t+0.3);
+}
+function playWow(ac,t){
+  const ps=wonkPitchScale;
+  const osc=ac.createOscillator();
+  const lp=ac.createBiquadFilter();
+  const gain=ac.createGain();
+  osc.type='sawtooth'; osc.frequency.value=110*ps;
+  lp.type='lowpass';
+  lp.frequency.setValueAtTime(300,t);
+  lp.frequency.linearRampToValueAtTime(3000,t+0.18);
+  lp.frequency.linearRampToValueAtTime(300,t+0.5);
+  osc.connect(lp); lp.connect(gain);
+  gain.gain.setValueAtTime(0.35,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+  gain.connect(getReverb()); gain.connect(ac.destination);
+  osc.start(t); osc.stop(t+0.65);
+}
+function playWeird(ac,t,type){
+  const ps=wonkPitchScale;
+  const carrier=ac.createOscillator();
+  const modulator=ac.createOscillator();
+  const modGain=ac.createGain();
+  const gain=ac.createGain();
+  carrier.type='sine';
+  modulator.type='sine';
+  if(type===0){
+    carrier.frequency.value=280*ps; modulator.frequency.value=140*ps; modGain.gain.value=200;
+  } else {
+    carrier.frequency.value=440*ps; modulator.frequency.value=220*ps; modGain.gain.value=350;
+    carrier.frequency.linearRampToValueAtTime(880*ps,t+0.4);
+  }
+  modulator.connect(modGain); modGain.connect(carrier.frequency);
+  carrier.connect(gain);
+  gain.gain.setValueAtTime(0.4,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.65);
+  gain.connect(getReverb()); gain.connect(ac.destination);
+  carrier.start(t); modulator.start(t); carrier.stop(t+0.7); modulator.stop(t+0.7);
+}
+
+// Gentle woodblock metronome tick
+function playWoodblock(accent){
+  const ac=ensureAudio();
+  const t=ac.currentTime;
+  // Pitched body — quick falling triangle wave
+  const osc=ac.createOscillator();
+  osc.type='triangle';
+  const baseFreq=accent?1500:1100;
+  const endFreq =accent?1000:760;
+  osc.frequency.setValueAtTime(baseFreq,t);
+  osc.frequency.exponentialRampToValueAtTime(endFreq,t+0.05);
+  const gain=ac.createGain();
+  gain.gain.setValueAtTime(accent?0.24:0.16,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.start(t); osc.stop(t+0.1);
+  // Tiny noise transient for "wood" attack
+  const nbuf=ac.createBuffer(1,Math.floor(ac.sampleRate*0.015),ac.sampleRate);
+  const nd=nbuf.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i]=(Math.random()*2-1)*(1-i/nd.length);
+  const noise=ac.createBufferSource(); noise.buffer=nbuf;
+  const ng=ac.createGain(); ng.gain.value=accent?0.10:0.06;
+  noise.connect(ng); ng.connect(ac.destination);
+  noise.start(t); noise.stop(t+0.02);
+}
+
+// ═══════════════════════════════════════════════════
+//  SAMPLE RECORDING & PITCHED PLAYBACK (Facey)
+// ═══════════════════════════════════════════════════
+let micStream = null;
+const MAX_SAMPLES = 100;
+const sampleSlots = [];          // AudioBuffer[]
+let lockedSlot = null;           // null = random mode; integer = locked to that slot
+let lastPlayedSlot = null;       // most recent slot played, used when locking via left ear
+let isCountingDown = false;
+let isRecordingSample = false;
+const activeSampleSources = []; // for live pitch updates
+// Internal config — not exposed to UI. When true, a new sample playback cuts
+// off any currently-playing sample. When false, samples can overlap (polyphonic).
+let faceyMonophonic = true;
+
+// Mouth stretch state: 0 = rest (highest pitch), 1 = fully stretched down (lowest)
+let mouthStretch = 0;
+let mouthDragActive = false;
+let mouthDragStartY = 0;
+let mouthDragStartStretch = 0;
+
+function pitchRateFromStretch(s){
+  s = Math.max(0, Math.min(1, s));
+  const logRate = 1 - s * 2;
+  return Math.pow(2, logRate);
+}
+
+function setMouthStretch(s){
+  mouthStretch = Math.max(0, Math.min(1, s));
+  if(faceBlob && faceBlob.setMouthStretch) faceBlob.setMouthStretch(mouthStretch);
+  const rate = pitchRateFromStretch(mouthStretch);
+  activeSampleSources.forEach(src=>{
+    try { src.playbackRate.value = rate; } catch(e){}
+  });
+}
+
+async function ensureMic(){
+  if(micStream) return micStream;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    throw new Error('Microphone not available');
+  }
+  micStream = await navigator.mediaDevices.getUserMedia({audio: true});
+  return micStream;
+}
+
+function showCountdown(text, isRec){
+  const el = document.getElementById('face-countdown');
+  el.textContent = text;
+  el.classList.toggle('rec', !!isRec);
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+function hideCountdown(){
+  const el = document.getElementById('face-countdown');
+  el.classList.remove('show');
+  el.classList.remove('rec');
+}
+
+function updateSampleIndicator(){
+  const el = document.getElementById('sample-indicator');
+  if(!el) return;
+  const n = sampleSlots.length;
+  let text, loaded;
+  if(n === 0){
+    text = 'no samples';
+    loaded = false;
+  } else if(lockedSlot !== null){
+    text = `${n} sample${n>1?'s':''} · 🔒 #${lockedSlot+1}`;
+    loaded = true;
+  } else {
+    text = `${n} sample${n>1?'s':''} · 🎲 random`;
+    loaded = true;
+  }
+  el.textContent = text;
+  el.classList.toggle('loaded', loaded);
+}
+
+// Slot helpers
+function storeSampleBuffer(buf){
+  // FIFO if full: drop oldest, adjust any indices that pointed into the shifted array
+  if(sampleSlots.length >= MAX_SAMPLES){
+    sampleSlots.shift();
+    if(lockedSlot !== null){
+      lockedSlot = lockedSlot === 0 ? null : lockedSlot - 1;
+    }
+    if(lastPlayedSlot !== null){
+      lastPlayedSlot = lastPlayedSlot === 0 ? null : lastPlayedSlot - 1;
+    }
+  }
+  sampleSlots.push(buf);
+  // Auto-lock to the freshly recorded slot so the next nose-tap plays it
+  lockedSlot = sampleSlots.length - 1;
+  updateSampleIndicator();
+}
+
+function toggleLock(){
+  if(sampleSlots.length === 0) return;       // nothing to lock to
+  if(lockedSlot !== null){
+    lockedSlot = null;                       // unlock → random mode
+  } else if(lastPlayedSlot !== null){
+    lockedSlot = lastPlayedSlot;             // lock to whatever just played
+  } else {
+    // In random mode but nothing has played yet — lock to most recent recording
+    lockedSlot = sampleSlots.length - 1;
+  }
+  updateSampleIndicator();
+}
+
+async function startSampleRecord(){
+  if(isCountingDown || isRecordingSample) return;
+  isCountingDown = true;
+  try {
+    await ensureMic();
+  } catch(e){
+    console.error('Mic error', e);
+    showCountdown('NO MIC');
+    setTimeout(()=>{ hideCountdown(); isCountingDown=false; }, 1400);
+    return;
+  }
+
+  for(let n=3; n>=1; n--){
+    showCountdown(String(n), false);
+    await new Promise(r=>setTimeout(r,1000));
+    if(!isCountingDown) return;
+  }
+
+  isRecordingSample = true;
+  showCountdown('● REC', true);
+
+  const chunks = [];
+  let recorder;
+  try {
+    recorder = new MediaRecorder(micStream);
+  } catch(e){
+    console.error('Recorder error', e);
+    showCountdown('NO REC');
+    setTimeout(()=>{ hideCountdown(); isCountingDown=false; isRecordingSample=false; }, 1400);
+    return;
+  }
+  recorder.ondataavailable = e => { if(e.data && e.data.size>0) chunks.push(e.data); };
+  recorder.onstop = async () => {
+    hideCountdown();
+    isCountingDown = false;
+    isRecordingSample = false;
+    if(chunks.length===0){ updateSampleIndicator(); return; }
+    const blob = new Blob(chunks, {type: recorder.mimeType || 'audio/webm'});
+    try {
+      const arrayBuf = await blob.arrayBuffer();
+      const ac = ensureAudio();
+      const buf = await ac.decodeAudioData(arrayBuf);
+      storeSampleBuffer(buf);
+    } catch(e){
+      console.error('Decode failed', e);
+    }
+  };
+  recorder.start();
+  setTimeout(()=>{ if(recorder.state==='recording') recorder.stop(); }, 2000);
+}
+
+function pickPlaybackSlot(){
+  if(sampleSlots.length === 0) return null;
+  if(lockedSlot !== null) return lockedSlot;
+  // Random mode
+  return Math.floor(Math.random() * sampleSlots.length);
+}
+
+function playSample(){
+  const slot = pickPlaybackSlot();
+  if(slot === null){
+    updateSampleIndicator();
+    return false;
+  }
+  const ac = ensureAudio();
+  // Monophonic: stop anything currently playing first (onended callbacks will clean up activeSampleSources)
+  if(faceyMonophonic){
+    activeSampleSources.forEach(s => { try { s.stop(); } catch(e){} });
+  }
+  const src = ac.createBufferSource();
+  src.buffer = sampleSlots[slot];
+  src.playbackRate.value = pitchRateFromStretch(mouthStretch) * wonkPitchScale;
+  src.connect(getReverb());
+  src.connect(ac.destination);
+  activeSampleSources.push(src);
+  src.onended = () => {
+    const i = activeSampleSources.indexOf(src);
+    if(i>=0) activeSampleSources.splice(i,1);
+  };
+  src.start();
+  lastPlayedSlot = slot;
+  return true;
+}
+
+// ═══════════════════════════════════════════════════
+//  LOOP ENGINE (record, play, metronome, count-in)
+// ═══════════════════════════════════════════════════
+let bpm = 90;
+let loopEvents = [];   // {t, type, index}
+let isRecording = false;
+let isPlaying = false;
+let isCountingIn = false;
+let countInDisplay = 0;
+let loopStart = null;   // performance.now() of cycle start (or recording start)
+let loopDuration = 0;   // ms for 2 bars
+let playbackTimeout = null;
+let rafId = null;
+let metronomeTimer = null;
+
+// Wonk / quantize controls
+let wonkiness = 0;       // -1 (hard quantize) .. 0 (as played) .. +1 (full wonk)
+let quantizeGrid = 16;   // 16, 8, or 4 (denominator: 1/16, 1/8, 1/4)
+let wonkPitchScale = 1;  // multiplier applied to synth frequencies during loop playback
+
+function getLoopDuration(){ return (60000/bpm)*8; } // 2 bars = 8 beats
+function getBeatMs(){ return 60000/bpm; }
+// Grid spacing in ms: 1/4 = one beat; 1/8 = half beat; 1/16 = quarter beat
+function getGridMs(){ return getBeatMs() * (4 / quantizeGrid); }
+
+function setQuantizeGrid(g){
+  quantizeGrid = g;
+  document.querySelectorAll('.grid-picker button').forEach(b=>{
+    b.classList.toggle('active', +b.dataset.grid === g);
+  });
+  // Changes take effect on the next loop cycle (schedulePlayback re-reads each cycle)
+}
+
+function setWonkiness(v){
+  wonkiness = Math.max(-1, Math.min(1, v));
+  // Same: takes effect next cycle, so dragging mid-cycle stays smooth
+}
+
+// Map an original event time to its wonk-transformed time within the loop
+function transformEventTime(t, w, gridMs, loopDur){
+  if(Math.abs(w) < 0.005) return t;
+  const gridT = Math.round(t / gridMs) * gridMs;
+  let result;
+  if(w < 0){
+    // Quantize toward grid
+    result = t * (1 + w) + gridT * (-w);
+  } else {
+    // Anti-quantize: push away from grid
+    const distance = t - gridT;
+    let direction = distance >= 0 ? 1 : -1;
+    if(distance === 0) direction = Math.random() < 0.5 ? -1 : 1;
+    const maxPush = gridMs * 0.45; // stay shy of the next grid line
+    const push = direction * w * maxPush * (0.7 + Math.random() * 0.3);
+    result = t + push;
+  }
+  // Wrap into [0, loopDur)
+  return ((result % loopDur) + loopDur) % loopDur;
+}
+
+// Random pitch multiplier — only on the positive (wonk) side, ramping up quadratically
+function computeWonkPitch(w){
+  if(w <= 0) return 1;
+  const maxCents = w * w * 700; // up to ~700¢ (7 semitones) at full wonk
+  const cents = (Math.random() * 2 - 1) * maxCents;
+  return Math.pow(2, cents / 1200);
+}
+
+function setTempo(v){
+  bpm=v;
+  document.getElementById('tempo-val').textContent=v+' BPM';
+  loopDuration=getLoopDuration();
+  if(isPlaying) restartPlayback();
+  // Metronome ticks pick up new bpm naturally on next tick
+}
+
+// --- Button click handlers ---
+function recBtnClick(){
+  if(isCountingIn){
+    // Cancel count-in
+    stopMetronome();
+    updateButtons();
+    return;
+  }
+  if(isRecording){
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function playBtnClick(){
+  if(isCountingIn){
+    stopMetronome();
+    updateButtons();
+    return;
+  }
+  if(isRecording){
+    // Stop recording; auto-play if fresh, seamless continue if overdub
+    stopRecording();
+    return;
+  }
+  if(isPlaying){
+    stopPlaybackNow();
+  } else if(loopEvents.length>0){
+    startPlaybackFresh();
+  }
+  // else: nothing to play
+}
+
+function updateButtons(){
+  const rec=document.getElementById('rec-btn');
+  const play=document.getElementById('play-btn');
+  if(isCountingIn){
+    rec.className='counting';
+    rec.textContent='● '+countInDisplay;
+  } else if(isRecording){
+    rec.className='recording';
+    rec.textContent='■ STOP';
+  } else {
+    rec.className='';
+    rec.textContent='● REC';
+  }
+  if(isPlaying){
+    play.className='playing';
+    play.textContent='■ STOP';
+  } else if(loopEvents.length>0){
+    play.className='';
+    play.textContent='▶ PLAY';
+  } else {
+    play.className='disabled';
+    play.textContent='▶ PLAY';
+  }
+}
+
+// --- Recording ---
+function startRecording(){
+  ensureAudio();
+  loopDuration=getLoopDuration();
+  if(isPlaying && loopEvents.length>0){
+    // OVERDUB: leave existing loop running; metronome starts now, aligned to loop phase
+    isRecording=true;
+    updateButtons();
+    startMetronomeForOverdub();
+  } else {
+    // Fresh: 4-beat count-in, then start recording on the next downbeat
+    loopEvents=[];
+    isPlaying=false;
+    isRecording=false;
+    clearTimeout(playbackTimeout);
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    document.getElementById('loop-bar').style.width='0%';
+    startCountInThenRecord();
+  }
+}
+
+function stopRecording(){
+  if(isCountingIn){
+    stopMetronome();
+    updateButtons();
+    return;
+  }
+  const wasOverdub = isPlaying;
+  isRecording=false;
+  stopMetronome();
+  if(!wasOverdub){
+    // Fresh recording stopped → auto-play if anything captured
+    if(loopEvents.length>0){
+      isPlaying=true;
+      loopStart=performance.now();
+      schedulePlayback();
+      if(!rafId) animateLoopBar();
+    } else {
+      isPlaying=false;
+      if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+      document.getElementById('loop-bar').style.width='0%';
+    }
+  }
+  // wasOverdub: playback continues uninterrupted
+  updateButtons();
+}
+
+// --- Playback control ---
+function startPlaybackFresh(){
+  isPlaying=true;
+  loopDuration=getLoopDuration();
+  loopStart=performance.now();
+  schedulePlayback();
+  if(!rafId) animateLoopBar();
+  updateButtons();
+}
+
+function stopPlaybackNow(){
+  isPlaying=false;
+  clearTimeout(playbackTimeout);
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  document.getElementById('loop-bar').style.width='0%';
+  updateButtons();
+}
+
+function clearLoop(){
+  isRecording=false; isPlaying=false;
+  loopEvents=[];
+  clearTimeout(playbackTimeout);
+  stopMetronome();
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  document.getElementById('loop-bar').style.width='0%';
+  updateButtons();
+}
+
+function recordEvent(type,index){
+  if(!isRecording) return;
+  const t=(performance.now()-loopStart)%loopDuration;
+  loopEvents.push({t,type,index});
+}
+
+function schedulePlayback(){
+  clearTimeout(playbackTimeout);
+  if(!isPlaying) return;
+  const now=performance.now();
+  const elapsed=(now-loopStart)%loopDuration;
+  const gridMs = getGridMs();
+  loopEvents.forEach(ev=>{
+    const tT = transformEventTime(ev.t, wonkiness, gridMs, loopDuration);
+    let delay = tT - elapsed;
+    if(delay < 0) delay += loopDuration;
+    const pitchScale = computeWonkPitch(wonkiness);
+    setTimeout(()=>{
+      if(!isPlaying) return;
+      wonkPitchScale = pitchScale;
+      fireEvent(ev.type, ev.index);
+      wonkPitchScale = 1;
+    }, delay);
+  });
+  playbackTimeout=setTimeout(()=>{
+    if(isPlaying){ loopStart=performance.now(); schedulePlayback(); }
+  },loopDuration-elapsed+2);
+}
+
+function restartPlayback(){
+  clearTimeout(playbackTimeout);
+  loopStart=performance.now();
+  if(isPlaying) schedulePlayback();
+}
+
+function fireEvent(type,index){
+  if(type==='drum'){ DRUM_FNS[index](); flashHit('drum',DRUM_COLORS[index]); blobPulse(drumBlob,index); }
+  if(type==='key'){ playNote(NOTE_FREQS[index]); flashHit('key',NOTE_COLORS[index]); blobPulse(keyBlob,index); }
+  if(type==='face'){ playVocal(index); flashHit('face',FACE_COLORS[index]); blobPulse(faceBlob,index); }
+  if(type==='sample'){
+    if(playSample()){ flashHit('face',FACE_COLORS[2]); if(faceBlob && faceBlob.pulseNose) faceBlob.pulseNose(); }
+  }
+}
+
+function animateLoopBar(){
+  rafId=requestAnimationFrame(animateLoopBar);
+  if(!isRecording && !isPlaying){ rafId=null; return; }
+  const elapsed=(performance.now()-loopStart)%loopDuration;
+  document.getElementById('loop-bar').style.width=(elapsed/loopDuration*100)+'%';
+}
+
+// --- Metronome: count-in + ongoing ticks while recording ---
+function startCountInThenRecord(){
+  stopMetronome();
+  isCountingIn=true;
+  countInDisplay=0;
+  let beat=-4; // -4,-3,-2,-1 are the count-in; 0 is start of recording
+  updateButtons();
+
+  function tick(){
+    // On the transition tick (beat 0), recording begins
+    if(beat===0){
+      isCountingIn=false;
+      isRecording=true;
+      loopDuration=getLoopDuration();
+      loopStart=performance.now();
+      if(!rafId) animateLoopBar();
+      updateButtons();
+    }
+    // Play woodblock: all count-in beats accented; in-recording, accent every 4th beat
+    const accent = (beat<0) || (beat % 4 === 0);
+    playWoodblock(accent);
+    // Count-in label
+    if(beat<0){
+      countInDisplay = -beat; // -4→4, -3→3, -2→2, -1→1
+      updateButtons();
+    }
+    beat++;
+    if(isCountingIn || isRecording){
+      metronomeTimer = setTimeout(tick, getBeatMs());
+    } else {
+      metronomeTimer = null;
+    }
+  }
+  tick(); // fire first count-in beat immediately
+}
+
+function startMetronomeForOverdub(){
+  stopMetronome();
+  // Align next tick with the loop's current beat phase
+  const beatMs = getBeatMs();
+  const elapsed = performance.now() - loopStart;
+  const sinceLastBeat = ((elapsed % beatMs) + beatMs) % beatMs;
+  const timeToNextBeat = beatMs - sinceLastBeat;
+  let beat = Math.floor(elapsed / beatMs) + 1; // next absolute beat number from loopStart
+
+  function tick(){
+    if(!isRecording){ metronomeTimer=null; return; }
+    const accent = (beat % 4 === 0);
+    playWoodblock(accent);
+    beat++;
+    metronomeTimer = setTimeout(tick, getBeatMs());
+  }
+  metronomeTimer = setTimeout(tick, Math.max(8, timeToNextBeat));
+}
+
+function stopMetronome(){
+  isCountingIn=false;
+  if(metronomeTimer){ clearTimeout(metronomeTimer); metronomeTimer=null; }
+}
+
+// Beat pulse helper for body illumination (used by each blob's tick)
+function getBeatPulse(){
+  if(!loopStart) return 0;
+  if(isCountingIn) return 0;
+  if(!isRecording && !isPlaying) return 0;
+  const beatMs = getBeatMs();
+  const elapsed = performance.now() - loopStart;
+  if(elapsed < 0) return 0;
+  const phase = (elapsed % beatMs) / beatMs;
+  // Sharp attack at beat start, exponential-ish decay
+  const pulse = Math.pow(1 - phase, 2.5);
+  // Slight downbeat emphasis
+  const beatNum = Math.floor(elapsed / beatMs);
+  return (beatNum % 4 === 0) ? pulse * 1.35 : pulse;
+}
+
+
+// ═══════════════════════════════════════════════════
+//  HIT FLASH
+// ═══════════════════════════════════════════════════
+function flashHit(which,color){
+  const el=document.getElementById('flash');
+  if(!el) return;
+  el.style.background=color+'18';
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'),80);
+}
+
+// ═══════════════════════════════════════════════════
+//  THREE.JS BLOB RENDERER
+// ═══════════════════════════════════════════════════
+class BlobScene {
+  constructor(canvasId){
+    this.canvas=document.getElementById(canvasId);
+    this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:true});
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    this.scene=new THREE.Scene();
+    this.camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+    this.camera.position.set(0,0,5);
+    this.pulseTargets=[]; // {mesh, strength}
+    this.clock=new THREE.Clock();
+    this.resize();
+  }
+  resize(){
+    const w=this.canvas.clientWidth, h=this.canvas.clientHeight;
+    this.renderer.setSize(w,h,false);
+    this.camera.aspect=w/h;
+    this.camera.updateProjectionMatrix();
+  }
+  render(t){
+    this.renderer.render(this.scene,this.camera);
+  }
+}
+
+// ── Shared utils ──
+function makeGlow(color,intensity=1.5){
+  return new THREE.PointLight(color,intensity,8);
+}
+function addAmbient(scene,color=0x330044,intensity=0.6){
+  scene.add(new THREE.AmbientLight(color,intensity));
+}
+
+// Deform geometry vertices for organic blob
+function blobifyGeometry(geo, seed=0, scale=0.18){
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+    const noise=Math.sin(x*3.1+seed)*Math.cos(y*2.7+seed*0.7)*Math.sin(z*2.3+seed*0.4);
+    const r=Math.sqrt(x*x+y*y+z*z);
+    const nx=x/r*(r+noise*scale);
+    const ny=y/r*(r+noise*scale);
+    const nz=z/r*(r+noise*scale);
+    pos.setXYZ(i,nx,ny,nz);
+  }
+  pos.needsUpdate=true;
+  geo.computeVertexNormals();
+}
+
+// ── PULSE SYSTEM ──
+const pulseData=new Map(); // mesh -> {t, base positions}
+function blobPulse(blobObj, zoneIdx){
+  if(!blobObj) return;
+  blobObj.pulse(zoneIdx);
+}
+
+// ═══════════════════════════════════════════════════
+//  DRUMBO — 4 drum pads as lumps on a spiky blob
+// ═══════════════════════════════════════════════════
+let drumBlob=null;
+
+// Drumbo pad tweakables — adjust to retune the drum layout
+const DRUMBO_PAD_RADIUS  = 0.42;   // disc radius (was 0.28; ~1.5x for chunkier pads)
+const DRUMBO_PAD_HEIGHT  = 0.08;   // disc thickness
+const DRUMBO_PAD_SPACING = 0.48;   // distance from blob center to each pad center (x and y)
+const DRUMBO_PAD_Z       = 1.50;   // depth on the face — must clear body bumps (body max radius ≈ 1.52)
+
+function buildDrumbo(){
+  const group=new THREE.Group();
+  // Main body
+  const bodyGeo=new THREE.IcosahedronGeometry(1.3,4);
+  blobifyGeometry(bodyGeo,1.1,0.22);
+  const bodyMat=new THREE.MeshStandardMaterial({
+    color:0x4a1f6e, roughness:0.5, metalness:0.35,
+    emissive:0x3a0a55,emissiveIntensity:0.9
+  });
+  const body=new THREE.Mesh(bodyGeo,bodyMat);
+  body.userData = { kind:'body', blobName:'drum' };
+  group.add(body);
+
+  // 4 drum pads laid out in a tight 2x2 grid on the face
+  const padPositions=[
+    new THREE.Vector3(-DRUMBO_PAD_SPACING,  DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
+    new THREE.Vector3( DRUMBO_PAD_SPACING,  DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
+    new THREE.Vector3(-DRUMBO_PAD_SPACING, -DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
+    new THREE.Vector3( DRUMBO_PAD_SPACING, -DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
+  ];
+  const padColors=[0xff3366,0xff8833,0x33ddff,0x66ff33];
+  const padMeshes=[];
+  padPositions.forEach((pos,i)=>{
+    const pg=new THREE.CylinderGeometry(DRUMBO_PAD_RADIUS, DRUMBO_PAD_RADIUS, DRUMBO_PAD_HEIGHT, 32);
+    const pm=new THREE.MeshStandardMaterial({
+      color:padColors[i],roughness:0.3,metalness:0.6,
+      emissive:padColors[i],emissiveIntensity:0.55
+    });
+    const pad=new THREE.Mesh(pg,pm);
+    pad.position.copy(pos);
+    pad.lookAt(new THREE.Vector3(0,0,0));
+    pad.rotateX(Math.PI/2);
+    pad.userData = { kind:'drum-pad', index:i };
+    group.add(pad);
+    padMeshes.push(pad);
+  });
+
+  // Glowy eyes (decorative, not interactive) — sit above each top pad
+  const eyeGeo=new THREE.SphereGeometry(0.11,12,12);
+  [-DRUMBO_PAD_SPACING, DRUMBO_PAD_SPACING].forEach(x=>{
+    const em=new THREE.MeshStandardMaterial({color:0xff2244,emissive:0xff2244,emissiveIntensity:3});
+    const eye=new THREE.Mesh(eyeGeo,em);
+    // y: just above the top edge of the top pads (pad center + pad radius + a little gap)
+    eye.position.set(x, DRUMBO_PAD_SPACING + DRUMBO_PAD_RADIUS + 0.15, 1.15);
+    group.add(eye);
+  });
+
+  group.scale.setScalar(0.5);
+
+  return {
+    group, body, padMeshes, padColors,
+    pulse(zoneIdx){
+      const pad=padMeshes[zoneIdx];
+      const mat=pad.material;
+      const origEI=0.55;
+      mat.emissiveIntensity=2.5;
+      pad.scale.set(1,1.5,1);
+      setTimeout(()=>{
+        mat.emissiveIntensity=origEI;
+        pad.scale.set(1,1,1);
+      },140);
+    },
+    tick(t){
+      group.rotation.y=Math.sin(t*0.18)*0.2;
+      group.rotation.x=Math.sin(t*0.13)*0.07;
+      const s=1+Math.sin(t*1.2)*0.02;
+      body.scale.set(s,s,s);
+      body.material.emissiveIntensity = 0.9 + getBeatPulse()*0.7;
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════
+//  KEEBO — keyboard blob with 8 rippling key zones
+// ═══════════════════════════════════════════════════
+let keyBlob=null;
+
+function buildKeebo(){
+  const group=new THREE.Group();
+  // Rounder body — slightly less bumpy so it doesn't poke through the keyboard
+  const bodyGeo=new THREE.SphereGeometry(1.35,64,64);
+  blobifyGeometry(bodyGeo,2.4,0.08);
+  const bodyMat=new THREE.MeshStandardMaterial({
+    color:0x1a3d7a, roughness:0.35, metalness:0.55,
+    emissive:0x0a2055,emissiveIntensity:1.0
+  });
+  const body=new THREE.Mesh(bodyGeo,bodyMat);
+  body.userData = { kind:'body', blobName:'key' };
+  group.add(body);
+
+  // 8 key zones — sit clearly in front of the body so its breathing/bumps can't occlude them
+  const keyColors=[0xcc55ff,0x8855ff,0x5588ff,0x33aaff,0x33ffcc,0x77ff55,0xffee33,0xff8833];
+  const keyMeshes=[];
+  const totalW=2.0, startX=-totalW/2+totalW/16;
+  const KEY_Z = 1.6;          // base z (was 1.28)
+  const KEY_Z_PRESSED = 1.5;  // pressed z (was 1.15)
+  for(let i=0;i<8;i++){
+    const x=startX+i*(totalW/8);
+    const kg=new THREE.BoxGeometry(0.19,0.55,0.08);
+    const km=new THREE.MeshStandardMaterial({
+      color:keyColors[i],roughness:0.25,metalness:0.7,
+      emissive:keyColors[i],emissiveIntensity:0.7
+    });
+    const key=new THREE.Mesh(kg,km);
+    key.position.set(x,0,KEY_Z);
+    key.userData = { kind:'key-pad', index:i };
+    group.add(key);
+    keyMeshes.push(key);
+  }
+
+  // Antennae (decorative, treated as part of body for drag)
+  [-0.5,0.5].forEach((x,i)=>{
+    const sg=new THREE.SphereGeometry(0.07,8,8);
+    const sm=new THREE.MeshStandardMaterial({color:keyColors[i*4],emissive:keyColors[i*4],emissiveIntensity:3});
+    const s=new THREE.Mesh(sg,sm);
+    s.position.set(x,1.55,0.3);
+    s.userData = { kind:'body', blobName:'key' };
+    group.add(s);
+    const cg=new THREE.CylinderGeometry(0.02,0.02,0.5,8);
+    const cm=new THREE.MeshStandardMaterial({color:0x8888aa,roughness:0.5});
+    const cyl=new THREE.Mesh(cg,cm);
+    cyl.position.set(x,1.3,0.3);
+    group.add(cyl);
+  });
+
+  group.scale.setScalar(0.5);
+
+  return {
+    group, body, keyMeshes, keyColors,
+    pulse(zoneIdx){
+      const key=keyMeshes[zoneIdx];
+      key.material.emissiveIntensity=3.5;
+      key.position.z=KEY_Z_PRESSED;
+      setTimeout(()=>{
+        key.material.emissiveIntensity=0.7;
+        key.position.z=KEY_Z;
+      },200);
+    },
+    tick(t){
+      group.rotation.y=Math.sin(t*0.22)*0.18;
+      group.rotation.x=Math.sin(t*0.15)*0.05;
+      const s=1+Math.sin(t*0.9)*0.018;
+      body.scale.set(s,s,s);
+      body.material.emissiveIntensity = 1.0 + getBeatPulse()*0.7;
+      keyMeshes.forEach((k,i)=>{
+        k.position.z=KEY_Z+Math.sin(t*1.8+i*0.8)*0.012;
+      });
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════
+//  FACEY — weird face blob with tappable features
+// ═══════════════════════════════════════════════════
+let faceBlob=null;
+
+function buildFacey(){
+  const group=new THREE.Group();
+  // Elongated head shape
+  const bodyGeo=new THREE.SphereGeometry(1.2,64,64);
+  blobifyGeometry(bodyGeo,5.7,0.28);
+  body_mesh=new THREE.Mesh(bodyGeo,new THREE.MeshStandardMaterial({
+    color:0x3a1660,roughness:0.45,metalness:0.45,
+    emissive:0x250a45,emissiveIntensity:1.1
+  }));
+  body_mesh.scale.y=1.25;
+  body_mesh.userData = { kind:'body', blobName:'face' };
+  group.add(body_mesh);
+
+  // faceParts indices: 0=LE, 1=RE, 2=nose, 3=mouth, 4=forehead, 5=LCheek, 6=RCheek, 7=LEar, 8=REar
+  const faceParts=[];
+
+  // --- Eyes (left, right) — vocal sounds ---
+  const eyePositions=[new THREE.Vector3(-0.4,0.38,1.1),new THREE.Vector3(0.4,0.38,1.1)];
+  const eyeColors=[0xff55cc,0xcc33ff];
+  eyePositions.forEach((pos,i)=>{
+    const eg=new THREE.SphereGeometry(0.18,16,16);
+    const em=new THREE.MeshStandardMaterial({color:eyeColors[i],emissive:eyeColors[i],emissiveIntensity:2});
+    const eye=new THREE.Mesh(eg,em);
+    eye.position.copy(pos);
+    eye.userData = { kind:'face-vocal', partIdx:i };
+    group.add(eye);
+    faceParts.push({mesh:eye,label:FACE_ZONES[i],color:FACE_COLORS[i]});
+    // Pupil (decorative, not interactive)
+    const pg=new THREE.SphereGeometry(0.08,10,10);
+    const pm=new THREE.MeshStandardMaterial({color:0x000000,emissive:0x330066,emissiveIntensity:1});
+    const pupil=new THREE.Mesh(pg,pm);
+    pupil.position.copy(pos);
+    pupil.position.z+=0.12;
+    group.add(pupil);
+  });
+
+  // --- Nose: play-button triangle ---
+  const noseShape=new THREE.Shape();
+  noseShape.moveTo(-0.13, 0.18);
+  noseShape.lineTo(-0.13,-0.18);
+  noseShape.lineTo( 0.20, 0);
+  noseShape.lineTo(-0.13, 0.18);
+  const noseGeo=new THREE.ExtrudeGeometry(noseShape,{
+    depth:0.07, bevelEnabled:true, bevelThickness:0.025, bevelSize:0.025, bevelSegments:2
+  });
+  noseGeo.center();
+  const noseMat=new THREE.MeshStandardMaterial({
+    color:0xff7733, emissive:0xff7733, emissiveIntensity:0.7, metalness:0.4, roughness:0.3
+  });
+  const nose=new THREE.Mesh(noseGeo,noseMat);
+  nose.position.set(0, 0.04, 1.18);
+  nose.userData = { kind:'face-nose', partIdx:2 };
+  group.add(nose);
+  faceParts.push({mesh:nose,label:FACE_ZONES[2],color:FACE_COLORS[2]});
+
+  // --- Mouth: vertical stretchy pill ---
+  const mouthGeo=new THREE.SphereGeometry(0.15,24,16);
+  mouthGeo.translate(0,-0.15,0);
+  const mouthMat=new THREE.MeshStandardMaterial({
+    color:0x33ffaa, emissive:0x33ffaa, emissiveIntensity:1.5, roughness:0.3, metalness:0.5
+  });
+  const mouth=new THREE.Mesh(mouthGeo,mouthMat);
+  const MOUTH_REST_SCALE = {x:1.8, y:0.5, z:0.45};
+  const MOUTH_STRETCH_SCALE_Y = 5.0;
+  mouth.position.set(0,-0.25,1.05);
+  mouth.scale.set(MOUTH_REST_SCALE.x, MOUTH_REST_SCALE.y, MOUTH_REST_SCALE.z);
+  mouth.userData = { kind:'face-mouth', partIdx:3 };
+  group.add(mouth);
+  faceParts.push({mesh:mouth,label:FACE_ZONES[3],color:FACE_COLORS[3]});
+
+  // --- Forehead gem ---
+  const fg=new THREE.OctahedronGeometry(0.14,0);
+  const fm=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:4,metalness:1,roughness:0});
+  const forehead=new THREE.Mesh(fg,fm);
+  forehead.position.set(0,0.88,1.05);
+  forehead.userData = { kind:'face-vocal', partIdx:4 };
+  group.add(forehead);
+  faceParts.push({mesh:forehead,label:FACE_ZONES[4],color:FACE_COLORS[4]});
+
+  // --- Cheeks ---
+  const chkColors=[0xffee44,0x44ccff];
+  [[-0.85,0],[0.85,0]].forEach(([x,y],i)=>{
+    const cg=new THREE.SphereGeometry(0.22,14,14);
+    const cm=new THREE.MeshStandardMaterial({color:chkColors[i],emissive:chkColors[i],emissiveIntensity:1.2,transparent:true,opacity:0.75});
+    const chk=new THREE.Mesh(cg,cm);
+    chk.position.set(x,y,0.95);
+    chk.userData = { kind:'face-vocal', partIdx:5+i };
+    group.add(chk);
+    faceParts.push({mesh:chk,label:FACE_ZONES[5+i],color:FACE_COLORS[5+i]});
+  });
+
+  // --- Ears ---
+  // Left ear (i=0): yellow — toggles lock/random mode for sample playback
+  // Right ear (i=1): pink — records a new sample
+  const earMeshes=[];
+  let lockRing = null;
+  [-1, 1].forEach((side,i)=>{
+    const isLeft = (i === 0);
+    const outerColor = isLeft ? 0xffdd44 : 0xff44aa;
+    const outerEmissive = isLeft ? 0xeeb822 : 0xff2288;
+    const innerColor = isLeft ? 0x886600 : 0x991155;
+    const innerEmissive = isLeft ? 0x664400 : 0x661133;
+
+    const earGroup=new THREE.Group();
+    const eg=new THREE.SphereGeometry(0.28,18,18);
+    const em=new THREE.MeshStandardMaterial({
+      color:outerColor, emissive:outerEmissive, emissiveIntensity:1.4,
+      roughness:0.4, metalness:0.3
+    });
+    const outerEar=new THREE.Mesh(eg,em);
+    outerEar.scale.set(0.55, 1.0, 0.7);
+    outerEar.userData = { kind:'face-ear', partIdx:7+i };
+    earGroup.add(outerEar);
+    const ig=new THREE.SphereGeometry(0.16,12,12);
+    const im=new THREE.MeshStandardMaterial({
+      color:innerColor, emissive:innerEmissive, emissiveIntensity:1.8
+    });
+    const innerEar=new THREE.Mesh(ig,im);
+    innerEar.scale.set(0.45, 0.75, 0.4);
+    innerEar.position.set(side*0.08, 0, 0.08);
+    earGroup.add(innerEar);
+
+    // Halo ring on the left ear — visible only when locked
+    if(isLeft){
+      const ringGeo = new THREE.TorusGeometry(0.34, 0.022, 10, 36);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: 0xffee66, emissive: 0xffdd44, emissiveIntensity: 5,
+        transparent: true, opacity: 0
+      });
+      lockRing = new THREE.Mesh(ringGeo, ringMat);
+      // Tilted so it reads as a 3D halo from the front
+      lockRing.rotation.x = Math.PI * 0.18;
+      earGroup.add(lockRing);
+    }
+
+    earGroup.position.set(side*1.15, 0.35, 0.1);
+    earGroup.rotation.z = side*0.2;
+    group.add(earGroup);
+    earMeshes.push(outerEar);
+    faceParts.push({mesh:outerEar,label:FACE_ZONES[7+i],color:FACE_COLORS[7+i]});
+  });
+
+  group.scale.setScalar(0.5);
+
+  return {
+    group, faceParts, body:body_mesh, mouth, nose, earMeshes,
+    pulse(zoneIdx){
+      const p=faceParts[zoneIdx];
+      if(!p) return;
+      // Skip auto-pulse for mouth (it's a draggable control)
+      if(zoneIdx===3) return;
+      p.mesh.material.emissiveIntensity*=3;
+      const os=p.mesh.scale.x;
+      p.mesh.scale.setScalar(os*1.35);
+      setTimeout(()=>{
+        p.mesh.material.emissiveIntensity/=3;
+        // Restore mouth's non-uniform scale on its own; this branch never runs for it
+        p.mesh.scale.setScalar(os);
+      },180);
+    },
+    pulseNose(){
+      const m=nose.material;
+      const baseEI=sampleSlots.length>0?1.6:0.7;
+      m.emissiveIntensity=4.0;
+      nose.scale.setScalar(1.3);
+      setTimeout(()=>{
+        m.emissiveIntensity=baseEI;
+        nose.scale.setScalar(1.0);
+      },180);
+    },
+    setMouthStretch(s){
+      // s: 0 (rest) .. 1 (fully stretched down)
+      const sy = MOUTH_REST_SCALE.y + s * (MOUTH_STRETCH_SCALE_Y - MOUTH_REST_SCALE.y);
+      // Narrow horizontally a touch as it stretches (like taffy)
+      const sx = MOUTH_REST_SCALE.x - s * (MOUTH_REST_SCALE.x - 0.7);
+      mouth.scale.set(sx, sy, MOUTH_REST_SCALE.z);
+    },
+    tick(t){
+      group.rotation.y=Math.sin(t*0.19)*0.22;
+      group.rotation.x=Math.sin(t*0.11)*0.08;
+      const s=1+Math.sin(t*0.85)*0.022;
+      body_mesh.scale.set(s,s*1.25,s);
+      // Beat illumination on body
+      body_mesh.material.emissiveIntensity = 1.1 + getBeatPulse()*0.75;
+      // Eyes blink occasionally
+      const blinkT=t%4.0;
+      const blinkScale=blinkT>3.85?Math.max(0.1,(4.0-blinkT)*7):1;
+      faceParts[0].mesh.scale.y=blinkScale;
+      faceParts[1].mesh.scale.y=blinkScale;
+      // Forehead gem spin
+      faceParts[4].mesh.rotation.y=t*1.5;
+      faceParts[4].mesh.rotation.z=t*0.7;
+      // Nose glow based on whether any sample exists
+      const hasAny = sampleSlots.length > 0;
+      const targetEI = hasAny ? (1.6 + Math.sin(t*3)*0.4) : 0.55;
+      const cur = nose.material.emissiveIntensity;
+      nose.material.emissiveIntensity = cur + (targetEI - cur)*0.08;
+      // Ears wiggle gently when recording is armed
+      if(isCountingDown || isRecordingSample){
+        earMeshes.forEach((e,i)=>{
+          e.material.emissiveIntensity = 2.5 + Math.sin(t*8 + i*1.5)*1.2;
+        });
+      } else {
+        earMeshes.forEach(e=>{
+          e.material.emissiveIntensity += (1.4 - e.material.emissiveIntensity)*0.1;
+        });
+      }
+      // Lock halo: fade in when locked, slowly spin
+      if(lockRing){
+        const targetOp = (lockedSlot !== null) ? 0.95 : 0;
+        lockRing.material.opacity += (targetOp - lockRing.material.opacity) * 0.12;
+        lockRing.rotation.z += 0.025;
+        // Subtle wobble so it feels alive even when locked
+        lockRing.rotation.x = Math.PI * 0.18 + Math.sin(t*1.7)*0.08;
+      }
+    }
+  };
+}
+let body_mesh=null; // hoisted for faceBlob
+
+// ═══════════════════════════════════════════════════
+//  SHARED SCENE + BLOB REGISTRY + PHYSICS
+// ═══════════════════════════════════════════════════
+const stageCanvas = document.getElementById('stage-canvas');
+const renderer = new THREE.WebGLRenderer({canvas:stageCanvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0, 5);
+const sceneClock = new THREE.Clock();
+
+// Shared lights
+scene.add(new THREE.AmbientLight(0x8866aa, 1.5));
+const sceneLights = [
+  { color:0xdd66ff, intensity:3.4, pos:[0, 3, 3] },
+  { color:0xff7788, intensity:2.6, pos:[-4,-1, 2] },
+  { color:0x66bbff, intensity:2.4, pos:[ 4, 1, 2] },
+  { color:0x88ff88, intensity:1.6, pos:[ 0,-3, 3] },
+];
+sceneLights.forEach(L=>{
+  const pl = new THREE.PointLight(L.color, L.intensity, 14);
+  pl.position.set(...L.pos);
+  scene.add(pl);
+});
+
+// Build all three blobs and add to the shared scene
+drumBlob = buildDrumbo();
+keyBlob  = buildKeebo();
+faceBlob = buildFacey();
+scene.add(drumBlob.group);
+scene.add(keyBlob.group);
+scene.add(faceBlob.group);
+
+// Blob physics registry — homeX gets re-computed on resize
+const blobReg = [
+  { obj:drumBlob, name:'drum', label:'Drumbo', x:-2.0, y:0, vx:0, vy:0, radius:0.8, homeX:-2.0, homeY:0, color:'#ff5577' },
+  { obj:keyBlob,  name:'key',  label:'Keebo',  x: 0.0, y:0, vx:0, vy:0, radius:0.8, homeX: 0.0, homeY:0, color:'#7788ff' },
+  { obj:faceBlob, name:'face', label:'Facey',  x: 2.0, y:0, vx:0, vy:0, radius:0.85,homeX: 2.0, homeY:0, color:'#cc88ff' },
+];
+const blobByName = {};
+blobReg.forEach(b => { blobByName[b.name] = b; });
+
+let draggedBlob = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let moveMode = 'bounce'; // 'avoid' or 'bounce'
+
+// Viewport bounds computed from camera
+let viewHalfW = 3, viewHalfH = 2;
+function recomputeViewBounds(){
+  const visH = 2 * Math.abs(camera.position.z) * Math.tan(camera.fov * Math.PI/360);
+  const visW = visH * camera.aspect;
+  viewHalfW = visW/2;
+  viewHalfH = visH/2;
+  // Update homes so a wider screen spreads blobs further apart
+  const spread = Math.min(viewHalfW * 0.65, 2.3);
+  blobReg[0].homeX = -spread;
+  blobReg[1].homeX =  0;
+  blobReg[2].homeX =  spread;
+}
+
+function resize(){
+  const w = stageCanvas.clientWidth, h = stageCanvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  recomputeViewBounds();
+}
+resize();
+// Snap initial positions to homes (bounce mode has no home-spring to do this automatically)
+blobReg.forEach(b => { b.x = b.homeX; b.y = b.homeY; });
+window.addEventListener('resize', resize);
+
+// Move mode UI
+function setMoveMode(m){
+  moveMode = m;
+  document.querySelectorAll('#move-picker button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.move === m);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  POINTER → RAYCAST DISPATCH
+// ═══════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+
+function clientToNDC(cx, cy){
+  const r = stageCanvas.getBoundingClientRect();
+  return new THREE.Vector2(
+    ((cx - r.left) / r.width) * 2 - 1,
+    -((cy - r.top) / r.height) * 2 + 1
+  );
+}
+
+// Convert a screen point to world coordinates on the z=0 plane
+function screenToWorld(cx, cy){
+  const ndc = clientToNDC(cx, cy);
+  const v = new THREE.Vector3(ndc.x, ndc.y, 0.5);
+  v.unproject(camera);
+  const dir = v.sub(camera.position).normalize();
+  const dist = -camera.position.z / dir.z;
+  const p = camera.position.clone().add(dir.multiplyScalar(dist));
+  return { x:p.x, y:p.y };
+}
+
+// Build the array of pickable meshes (recomputed on demand — small enough cost)
+function collectPickables(){
+  const out = [];
+  blobReg.forEach(b => {
+    b.obj.group.traverse(o => {
+      if(o.isMesh && o.userData && o.userData.kind){
+        out.push(o);
+      }
+    });
+  });
+  return out;
+}
+
+// Keebo: detect if a hit lands inside the key strip area (covers both
+// direct key hits and gap-hits where the ray went through to the body)
+function checkKeyAreaHit(hits){
+  if(!hits || hits.length === 0) return null;
+  const hit = hits[0];
+  const obj = hit.object;
+  const ud = obj.userData || {};
+  if(ud.kind === 'key-pad') return { type:'key-pad', idx: ud.index };
+  if(ud.kind === 'body' && ud.blobName === 'key'){
+    // Did the ray strike the front face inside the keyboard rectangle?
+    const lp = obj.worldToLocal(hit.point.clone());
+    if(Math.abs(lp.x) < 1.05 && Math.abs(lp.y) < 0.35 && lp.z > 0.5){
+      return { type:'key-strip' };
+    }
+  }
+  return null;
+}
+
+// Trigger a single key (used by tap, glissando, and collision)
+function playKey(i, cx, cy){
+  playNote(NOTE_FREQS[i]);
+  keyBlob.pulse(i);
+  flashHit('key', NOTE_COLORS[i]);
+  spawnRipple(cx, cy, NOTE_COLORS[i]);
+  showLabel('key', i, cx, cy);
+  recordEvent('key', i);
+}
+
+// Trigger a single drum pad (used by tap and collision)
+function triggerDrum(i, cx, cy){
+  DRUM_FNS[i]();
+  drumBlob.pulse(i);
+  flashHit('drum', DRUM_COLORS[i]);
+  spawnRipple(cx, cy, DRUM_COLORS[i]);
+  showLabel('drum', i, cx, cy);
+  recordEvent('drum', i);
+}
+
+// Trigger a single Facey vocal part (used by tap and collision)
+function triggerFaceVocal(idx, cx, cy){
+  playVocal(idx);
+  faceBlob.pulse(idx);
+  flashHit('face', FACE_COLORS[idx]);
+  spawnRipple(cx, cy, FACE_COLORS[idx]);
+  showLabel('face', idx, cx, cy);
+  recordEvent('face', idx);
+}
+
+// Trigger Facey's nose (sample playback) — used by tap and collision
+function triggerFaceNose(cx, cy){
+  const ok = playSample();
+  flashHit('face', FACE_COLORS[2]);
+  spawnRipple(cx, cy, FACE_COLORS[2]);
+  showLabel('face', 2, cx, cy);
+  if(faceBlob.pulseNose) faceBlob.pulseNose();
+  if(ok) recordEvent('sample', 0);
+}
+
+// Key-drag (glissando) state
+let keyDragActive = false;
+let keyDragLastIdx = null;
+
+function handlePointerDown(e){
+  ensureAudio();
+  const cx = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
+  const cy = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
+  if(cx == null || cy == null) return;
+  const ndc = clientToNDC(cx, cy);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(collectPickables());
+  if(hits.length === 0) return;
+
+  // Keebo key area takes priority — covers direct key hits AND gap-through-to-body hits
+  const keyHit = checkKeyAreaHit(hits);
+  if(keyHit){
+    keyDragActive = true;
+    keyDragLastIdx = null;
+    if(keyHit.type === 'key-pad'){
+      playKey(keyHit.idx, cx, cy);
+      keyDragLastIdx = keyHit.idx;
+    }
+    if(e.preventDefault) e.preventDefault();
+    return;
+  }
+
+  const hit = hits[0].object;
+  const ud = hit.userData;
+  if(!ud || !ud.kind) return;
+
+  switch(ud.kind){
+    case 'drum-pad': {
+      triggerDrum(ud.index, cx, cy);
+      break;
+    }
+    case 'face-vocal': {
+      triggerFaceVocal(ud.partIdx, cx, cy);
+      break;
+    }
+    case 'face-mouth': {
+      mouthDragActive = true;
+      mouthDragStartY = cy;
+      mouthDragStartStretch = mouthStretch;
+      if(e.preventDefault) e.preventDefault();
+      break;
+    }
+    case 'face-ear': {
+      const idx = ud.partIdx;
+      // Left ear (7) = lock toggle (yellow); Right ear (8) = record (pink)
+      if(idx === 7){
+        toggleLock();
+      } else {
+        startSampleRecord();
+      }
+      flashHit('face', FACE_COLORS[idx]);
+      spawnRipple(cx, cy, FACE_COLORS[idx]);
+      showLabel('face', idx, cx, cy);
+      faceBlob.pulse(idx);
+      break;
+    }
+    case 'face-nose': {
+      triggerFaceNose(cx, cy);
+      break;
+    }
+    case 'body': {
+      const blob = blobByName[ud.blobName];
+      if(!blob) break;
+      draggedBlob = blob;
+      const wp = screenToWorld(cx, cy);
+      dragOffsetX = blob.x - wp.x;
+      dragOffsetY = blob.y - wp.y;
+      if(e.preventDefault) e.preventDefault();
+      break;
+    }
+  }
+}
+
+function handlePointerMove(e){
+  const cx = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
+  const cy = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
+
+  // Mouth drag
+  if(mouthDragActive){
+    if(cy != null){
+      const dy = cy - mouthDragStartY;
+      setMouthStretch(mouthDragStartStretch + dy / 180);
+      if(e.cancelable && e.preventDefault) e.preventDefault();
+    }
+    return;
+  }
+  // Blob drag
+  if(draggedBlob){
+    if(cx == null || cy == null) return;
+    const wp = screenToWorld(cx, cy);
+    const nx = wp.x + dragOffsetX;
+    const ny = wp.y + dragOffsetY;
+    draggedBlob.vx = (nx - draggedBlob.x) * 60;
+    draggedBlob.vy = (ny - draggedBlob.y) * 60;
+    draggedBlob.x = nx;
+    draggedBlob.y = ny;
+    const r = draggedBlob.radius;
+    draggedBlob.x = Math.max(-viewHalfW + r, Math.min(viewHalfW - r, draggedBlob.x));
+    draggedBlob.y = Math.max(-viewHalfH + r, Math.min(viewHalfH - r, draggedBlob.y));
+    if(e.cancelable && e.preventDefault) e.preventDefault();
+    return;
+  }
+  // Key drag (glissando across Keebo)
+  if(keyDragActive){
+    if(cx == null || cy == null) return;
+    const ndc = clientToNDC(cx, cy);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObjects(collectPickables());
+    const keyHit = checkKeyAreaHit(hits);
+    if(keyHit){
+      if(keyHit.type === 'key-pad'){
+        if(keyHit.idx !== keyDragLastIdx){
+          playKey(keyHit.idx, cx, cy);
+          keyDragLastIdx = keyHit.idx;
+        }
+      } else {
+        // Pointer in the gap between keys — clear last so re-entry retriggers
+        keyDragLastIdx = null;
+      }
+    } else {
+      // Left the key area entirely — also clears so re-entry retriggers
+      keyDragLastIdx = null;
+    }
+    if(e.cancelable && e.preventDefault) e.preventDefault();
+  }
+}
+
+function handlePointerUp(){
+  mouthDragActive = false;
+  draggedBlob = null;
+  keyDragActive = false;
+  keyDragLastIdx = null;
+}
+
+stageCanvas.addEventListener('mousedown', handlePointerDown);
+stageCanvas.addEventListener('touchstart', handlePointerDown, {passive:false});
+window.addEventListener('mousemove', handlePointerMove);
+window.addEventListener('mouseup', handlePointerUp);
+window.addEventListener('touchmove', handlePointerMove, {passive:false});
+window.addEventListener('touchend', handlePointerUp);
+window.addEventListener('touchcancel', handlePointerUp);
+
+// ═══════════════════════════════════════════════════
+//  PHYSICS — avoid + bounce modes, viewport clamp
+// ═══════════════════════════════════════════════════
+// Bounce-mode: tracks which blob pairs were touching last frame, so we only
+// fire a "click" on a *new* collision (not every frame while in contact)
+let collidingPairs = new Set();
+
+// Simulate a click on a random musical part of a blob. Goes through the same
+// trigger functions that real pointer clicks use, so loop recording, ripples,
+// labels, and pulses all happen identically.
+function triggerRandomClick(blob, contactX, contactY){
+  const s = worldToScreen(contactX, contactY);
+  if(blob.name === 'drum'){
+    triggerDrum(Math.floor(Math.random()*4), s.x, s.y);
+  } else if(blob.name === 'key'){
+    playKey(Math.floor(Math.random()*8), s.x, s.y);
+  } else if(blob.name === 'face'){
+    // Vocal parts (eyes, forehead, cheeks) plus nose if any sample is loaded
+    const pool = sampleSlots.length > 0
+      ? [...VOCAL_INDICES, 2]
+      : VOCAL_INDICES;
+    const idx = pool[Math.floor(Math.random()*pool.length)];
+    if(idx === 2){
+      triggerFaceNose(s.x, s.y);
+    } else {
+      triggerFaceVocal(idx, s.x, s.y);
+    }
+  }
+}
+
+function updatePhysics(dt){
+  if(moveMode === 'avoid'){
+    blobReg.forEach(b => {
+      if(b === draggedBlob) return;
+      let fx = 0, fy = 0;
+      // Repel from dragged blob
+      if(draggedBlob){
+        const dx = b.x - draggedBlob.x;
+        const dy = b.y - draggedBlob.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+        const safe = (b.radius + draggedBlob.radius) * 1.4;
+        const reach = safe * 2.0;
+        if(dist < reach){
+          const k = Math.pow(1 - dist/reach, 2) * 14;
+          fx += (dx/dist) * k;
+          fy += (dy/dist) * k;
+        }
+      }
+      // Repel from other non-dragged blobs (avoid pile-ups)
+      blobReg.forEach(o => {
+        if(o === b || o === draggedBlob) return;
+        const dx = b.x - o.x, dy = b.y - o.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+        const safe = b.radius + o.radius;
+        if(dist < safe * 1.1){
+          const k = (1 - dist/(safe*1.1)) * 6;
+          fx += (dx/dist) * k;
+          fy += (dy/dist) * k;
+        }
+      });
+      // Spring back to home
+      fx += (b.homeX - b.x) * 2.2;
+      fy += (b.homeY - b.y) * 2.2;
+      // Integrate with damping
+      b.vx = (b.vx + fx * dt) * Math.pow(0.05, dt);
+      b.vy = (b.vy + fy * dt) * Math.pow(0.05, dt);
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      // Clamp to viewport
+      const r = b.radius;
+      if(b.x < -viewHalfW + r){ b.x = -viewHalfW + r; b.vx = 0; }
+      if(b.x >  viewHalfW - r){ b.x =  viewHalfW - r; b.vx = 0; }
+      if(b.y < -viewHalfH + r){ b.y = -viewHalfH + r; b.vy = 0; }
+      if(b.y >  viewHalfH - r){ b.y =  viewHalfH - r; b.vy = 0; }
+    });
+  } else if(moveMode === 'bounce'){
+    // Integrate
+    blobReg.forEach(b => {
+      if(b === draggedBlob) return;
+      b.vx *= Math.pow(0.5, dt);   // air drag
+      b.vy *= Math.pow(0.5, dt);
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+    });
+    // Pair-wise collisions
+    const stillTouching = new Set();
+    for(let i=0;i<blobReg.length;i++){
+      for(let j=i+1;j<blobReg.length;j++){
+        const a = blobReg[i], b = blobReg[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+        const min = a.radius + b.radius;
+        if(dist < min){
+          const pairKey = a.name + '-' + b.name;
+          stillTouching.add(pairKey);
+          const isNewCollision = !collidingPairs.has(pairKey);
+
+          const nx = dx/dist, ny = dy/dist;
+          const overlap = min - dist;
+
+          // Fire random clicks on first impact only (not while continuously overlapping)
+          if(isNewCollision){
+            // Contact point on each blob's surface, in world coords
+            const aContactX = a.x + nx * a.radius;
+            const aContactY = a.y + ny * a.radius;
+            const bContactX = b.x - nx * b.radius;
+            const bContactY = b.y - ny * b.radius;
+            triggerRandomClick(a, aContactX, aContactY);
+            triggerRandomClick(b, bContactX, bContactY);
+          }
+
+          if(a === draggedBlob){
+            b.x += nx * overlap;
+            b.y += ny * overlap;
+            const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+            const vN = rvx*nx + rvy*ny;
+            if(vN < 0){
+              b.vx -= 2*vN*nx; b.vy -= 2*vN*ny;
+            }
+            b.vx += a.vx * 0.8; b.vy += a.vy * 0.8;
+          } else if(b === draggedBlob){
+            a.x -= nx * overlap;
+            a.y -= ny * overlap;
+            const rvx = a.vx - b.vx, rvy = a.vy - b.vy;
+            const vN = rvx*(-nx) + rvy*(-ny);
+            if(vN < 0){
+              a.vx -= 2*vN*(-nx); a.vy -= 2*vN*(-ny);
+            }
+            a.vx += b.vx * 0.8; a.vy += b.vy * 0.8;
+          } else {
+            a.x -= nx * overlap * 0.5;
+            a.y -= ny * overlap * 0.5;
+            b.x += nx * overlap * 0.5;
+            b.y += ny * overlap * 0.5;
+            const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+            const vN = rvx*nx + rvy*ny;
+            if(vN < 0){
+              a.vx += vN*nx; a.vy += vN*ny;
+              b.vx -= vN*nx; b.vy -= vN*ny;
+            }
+          }
+        }
+      }
+    }
+    collidingPairs = stillTouching;
+    // Walls
+    blobReg.forEach(b => {
+      if(b === draggedBlob) return;
+      const r = b.radius;
+      if(b.x < -viewHalfW + r){ b.x = -viewHalfW + r; b.vx = Math.abs(b.vx) * 0.7; }
+      if(b.x >  viewHalfW - r){ b.x =  viewHalfW - r; b.vx = -Math.abs(b.vx) * 0.7; }
+      if(b.y < -viewHalfH + r){ b.y = -viewHalfH + r; b.vy = Math.abs(b.vy) * 0.7; }
+      if(b.y >  viewHalfH - r){ b.y =  viewHalfH - r; b.vy = -Math.abs(b.vy) * 0.7; }
+    });
+  }
+}
+
+// Project a world-space x,y to screen-space CSS pixels (for floating name labels)
+function worldToScreen(x, y){
+  const v = new THREE.Vector3(x, y, 0);
+  v.project(camera);
+  const r = stageCanvas.getBoundingClientRect();
+  return {
+    x: (v.x * 0.5 + 0.5) * r.width + r.left,
+    y: (-v.y * 0.5 + 0.5) * r.height + r.top,
+  };
+}
+
+function updateNameLabels(){
+  blobReg.forEach(b => {
+    const el = document.getElementById('name-' + b.name);
+    if(!el) return;
+    // Label sits below the blob
+    const s = worldToScreen(b.x, b.y - b.radius * 1.05);
+    el.style.left = s.x + 'px';
+    el.style.top  = s.y + 'px';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════
+let lastFrame = performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  const t = sceneClock.getElapsedTime();
+
+  updatePhysics(dt);
+
+  // Sync each blob's group position from physics state
+  blobReg.forEach(b => {
+    b.obj.group.position.set(b.x, b.y, 0);
+    b.obj.tick(t);
+  });
+
+  updateNameLabels();
+  renderer.render(scene, camera);
+}
+animate();
+
+// Soundwave ripple from tap point
+function spawnRipple(cx,cy,color){
+  // 3 concentric rings staggered; each later ring has lower initial velocity
+  for(let i=0;i<3;i++){
+    setTimeout(()=>{
+      const r=document.createElement('div');
+      r.className='ripple ripple-'+(i+1);
+      r.style.left=cx+'px';
+      r.style.top=cy+'px';
+      r.style.borderColor=color;
+      r.style.boxShadow=`0 0 8px ${color}, inset 0 0 5px ${color}55`;
+      document.body.appendChild(r);
+      setTimeout(()=>r.remove(),680);
+    },i*80);
+  }
+}
+
+// Float-up label
+function showLabel(type,idx,cx,cy){
+  let labelEl=document.getElementById('tap-lbl-'+type);
+  if(!labelEl){
+    labelEl=document.createElement('div');
+    labelEl.id='tap-lbl-'+type;
+    labelEl.className='tap-label';
+    document.getElementById('stage').appendChild(labelEl);
+  }
+  const texts={
+    drum:DRUM_LABELS,
+    key:NOTE_NAMES,
+    face:FACE_ZONES
+  };
+  const colors={drum:DRUM_COLORS,key:NOTE_COLORS,face:FACE_COLORS};
+  labelEl.textContent=texts[type][idx];
+  labelEl.style.color=colors[type][idx];
+  labelEl.style.border=`1px solid ${colors[type][idx]}55`;
+  labelEl.style.background=colors[type][idx]+'22';
+  labelEl.style.left=(cx-40)+'px';
+  labelEl.style.top=(cy-20)+'px';
+  labelEl.style.transform='translateY(0px)';
+  labelEl.classList.remove('show');
+  void labelEl.offsetWidth;
+  labelEl.classList.add('show');
+  clearTimeout(labelEl._t);
+  labelEl._t=setTimeout(()=>labelEl.classList.remove('show'),700);
+}
+
+// Expose setTempo globally
+window.setTempo=setTempo;
+window.setWonkiness=setWonkiness;
+window.setQuantizeGrid=setQuantizeGrid;
+window.setMoveMode=setMoveMode;
+window.recBtnClick=recBtnClick;
+window.playBtnClick=playBtnClick;
+window.clearLoop=clearLoop;
+// Initial UI sync
+updateButtons();
+updateSampleIndicator();
+
+</script>
+</body>
+</html>
