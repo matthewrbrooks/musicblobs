@@ -49,6 +49,32 @@ export function showLabel(type, idx, cx, cy) {
   labelEl._t = setTimeout(() => labelEl.classList.remove('show'), 700);
 }
 
+export function showBassLabel(freq, cx, cy) {
+  const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const midi = Math.round(12 * Math.log2(freq / 440) + 69);
+  const name = noteNames[((midi % 12) + 12) % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  let el = document.getElementById('tap-lbl-bass');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'tap-lbl-bass';
+    el.className = 'tap-label';
+    document.getElementById('stage').appendChild(el);
+  }
+  if (el._t) clearTimeout(el._t);
+  el.textContent = name + octave;
+  el.style.color = '#44ee88';
+  el.style.border = '1px solid #44ee8855';
+  el.style.background = '#44ee8818';
+  el.style.left = (cx - 20) + 'px';
+  el.style.top = (cy - 20) + 'px';
+  el.style.transform = 'translateY(0px)';
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  el._t = setTimeout(() => el.classList.remove('show'), 700);
+}
+
 export function showCountdown(text, isRec) {
   const el = document.getElementById('face-countdown');
   el.textContent = text;

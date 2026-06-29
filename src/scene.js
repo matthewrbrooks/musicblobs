@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildDrumbo } from './blobs/drumbo.js';
 import { buildKeebo } from './blobs/keebo.js';
 import { buildFacey } from './blobs/facey.js';
+import { buildBassipede, BASS_INITIAL_LENGTH } from './blobs/bassipede.js';
 
 export const canvas = document.getElementById('stage-canvas');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -24,19 +25,22 @@ scene.add(new THREE.AmbientLight(0x8866aa, 1.5));
   scene.add(pl);
 });
 
-export const drumBlob = buildDrumbo();
-export const keyBlob  = buildKeebo();
-export const faceBlob = buildFacey();
+export const drumBlob      = buildDrumbo();
+export const keyBlob       = buildKeebo();
+export const faceBlob      = buildFacey();
+export const bassipedeBlob = buildBassipede();
 scene.add(drumBlob.group);
 scene.add(keyBlob.group);
 scene.add(faceBlob.group);
+scene.add(bassipedeBlob.group);
 
 export let viewHalfW = 3, viewHalfH = 2;
 
 export const blobReg = [
-  { obj: drumBlob, name: 'drum', label: 'Drumbo', x: -2.0, y: 0, vx: 0, vy: 0, radius: 0.8,  homeX: -2.0, homeY: 0, color: '#ff5577' },
-  { obj: keyBlob,  name: 'key',  label: 'Keebo',  x:  0.0, y: 0, vx: 0, vy: 0, radius: 0.8,  homeX:  0.0, homeY: 0, color: '#7788ff' },
-  { obj: faceBlob, name: 'face', label: 'Facey',  x:  2.0, y: 0, vx: 0, vy: 0, radius: 0.85, homeX:  2.0, homeY: 0, color: '#cc88ff' },
+  { obj: drumBlob,      name: 'drum', label: 'Drumbo',    x: -2.0, y:    0, vx: 0, vy: 0, radius: 0.8,  homeX: -2.0, homeY:    0, color: '#ff5577' },
+  { obj: keyBlob,       name: 'key',  label: 'Keebo',     x:  0.0, y:    0, vx: 0, vy: 0, radius: 0.8,  homeX:  0.0, homeY:    0, color: '#7788ff' },
+  { obj: faceBlob,      name: 'face', label: 'Facey',     x:  2.0, y:    0, vx: 0, vy: 0, radius: 0.85, homeX:  2.0, homeY:    0, color: '#cc88ff' },
+  { obj: bassipedeBlob, name: 'bass', label: 'Bassipede', x:  0.0, y: -1.5, vx: 0, vy: 0, radius: 0.7,  homeX:  0.0, homeY: -1.5, color: '#44ee88' },
 ];
 export const blobByName = {};
 blobReg.forEach(b => { blobByName[b.name] = b; });
@@ -50,6 +54,7 @@ function recomputeViewBounds() {
   blobReg[0].homeX = -spread;
   blobReg[1].homeX =  0;
   blobReg[2].homeX =  spread;
+  blobReg[3].homeY = -Math.min(viewHalfH * 0.7, 1.5);
 }
 
 export function resize() {
@@ -62,6 +67,8 @@ export function resize() {
 
 resize();
 blobReg.forEach(b => { b.x = b.homeX; b.y = b.homeY; });
+bassipedeBlob.tailWorldX = blobReg[3].homeX + BASS_INITIAL_LENGTH;
+bassipedeBlob.tailWorldY = blobReg[3].homeY;
 window.addEventListener('resize', resize);
 
 export function worldToScreen(x, y) {

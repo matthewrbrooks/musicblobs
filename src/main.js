@@ -1,7 +1,7 @@
 import './style.css';
 import { gate } from './gate.js';
 await gate();
-import { renderer, scene, camera, sceneClock, blobReg, drumBlob, keyBlob, faceBlob, updateNameLabels } from './scene.js';
+import { renderer, scene, camera, sceneClock, blobReg, drumBlob, keyBlob, faceBlob, bassipedeBlob, updateNameLabels } from './scene.js';
 import { updatePhysics } from './physics/physics.js';
 import { setFireEventCallback, updateButtons } from './loop.js';
 import { updateSampleIndicator } from './audio/sampler.js';
@@ -13,6 +13,7 @@ import { DRUM_FNS, DRUM_COLORS } from './audio/drums.js';
 import { NOTE_FREQS, NOTE_COLORS, playNote } from './audio/keys.js';
 import { FACE_COLORS, playVocal } from './audio/vocals.js';
 import { playSample } from './audio/sampler.js';
+import { playBass, stretchToFreq } from './audio/bass.js';
 
 // Wire the loop engine's fireEvent to audio + visual feedback
 setFireEventCallback((type, index, ps) => {
@@ -28,6 +29,10 @@ setFireEventCallback((type, index, ps) => {
     playVocal(index, ps);
     flashHit('face', FACE_COLORS[index]);
     blobPulse(faceBlob, index);
+  } else if (type === 'bass') {
+    const freq = stretchToFreq(index / 10000);
+    playBass(freq, ps, 0.5);
+    blobPulse(bassipedeBlob, 0);
   } else if (type === 'sample') {
     if (playSample(ps)) {
       flashHit('face', FACE_COLORS[2]);

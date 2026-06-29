@@ -2,10 +2,11 @@ import { DRUM_FNS, DRUM_COLORS } from '../audio/drums.js';
 import { NOTE_FREQS, NOTE_COLORS, playNote } from '../audio/keys.js';
 import { FACE_COLORS, VOCAL_INDICES, playVocal } from '../audio/vocals.js';
 import { playSample, sampleSlots } from '../audio/sampler.js';
-import { flashHit, spawnRipple, showLabel } from '../ui/effects.js';
+import { flashHit, spawnRipple, showLabel, showBassLabel } from '../ui/effects.js';
 import { blobPulse } from '../blobs/shared.js';
-import { drumBlob, keyBlob, faceBlob, worldToScreen } from '../scene.js';
+import { drumBlob, keyBlob, faceBlob, bassipedeBlob, worldToScreen } from '../scene.js';
 import { recordEvent } from '../loop.js';
+import { playBass, stretchToFreq, BASS_COLOR } from '../audio/bass.js';
 
 export function triggerDrum(i, cx, cy) {
   DRUM_FNS[i]();
@@ -43,12 +44,26 @@ export function triggerFaceNose(cx, cy) {
   if (ok) recordEvent('sample', 0);
 }
 
+export function triggerBassPluck(brightness, cx, cy) {
+  const bassObj = bassipedeBlob;
+  const stretchNorm = bassObj.getStretchNorm();
+  const freq = stretchToFreq(stretchNorm);
+  playBass(freq, 1, brightness);
+  blobPulse(bassObj, 0);
+  flashHit('bass', BASS_COLOR);
+  spawnRipple(cx, cy, BASS_COLOR);
+  showBassLabel(freq, cx, cy);
+  recordEvent('bass', Math.round(stretchNorm * 10000));
+}
+
 export function triggerRandomClick(blob, contactX, contactY) {
   const s = worldToScreen(contactX, contactY);
   if (blob.name === 'drum') {
     triggerDrum(Math.floor(Math.random() * 4), s.x, s.y);
   } else if (blob.name === 'key') {
     triggerKey(Math.floor(Math.random() * 8), s.x, s.y);
+  } else if (blob.name === 'bass') {
+    triggerBassPluck(0.5 + Math.random() * 0.5, s.x, s.y);
   } else if (blob.name === 'face') {
     const pool = sampleSlots.length > 0 ? [...VOCAL_INDICES, 2] : VOCAL_INDICES;
     const idx = pool[Math.floor(Math.random() * pool.length)];
