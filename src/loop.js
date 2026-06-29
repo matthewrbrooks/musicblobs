@@ -15,6 +15,13 @@ let metronomeTimer = null;
 
 export let wonkiness = 0;
 export let quantizeGrid = 16;
+export let snapToGrid = false;
+
+export function setSnapToGrid(v) {
+  snapToGrid = v;
+  const btn = document.getElementById('snap-btn');
+  if (btn) btn.classList.toggle('active', v);
+}
 
 // Registered by main.js after blobs are created — avoids a circular import
 let _fireEventCb = null;
@@ -81,7 +88,11 @@ export function setTempo(v) {
 
 export function recordEvent(type, index) {
   if (!isRecording) return;
-  const t = (performance.now() - loopStart) % loopDuration;
+  let t = (performance.now() - loopStart) % loopDuration;
+  if (snapToGrid) {
+    const gridMs = getGridMs();
+    t = (Math.round(t / gridMs) * gridMs) % loopDuration;
+  }
   loopEvents.push({ t, type, index });
 }
 
@@ -145,21 +156,16 @@ function startRecording() {
 
 function stopRecording() {
   if (isCountingIn) { stopMetronome(); updateButtons(); return; }
-  const wasOverdub = isPlaying;
   isRecording = false;
   stopMetronome();
-  if (!wasOverdub) {
-    if (loopEvents.length > 0) {
-      isPlaying = true;
-      loopStart = performance.now();
-      schedulePlayback();
-      if (!rafId) animateLoopBar();
-    } else {
-      isPlaying = false;
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      document.getElementById('loop-bar').style.width = '0%';
-    }
+  if (loopEvents.length === 0) {
+    // Nothing was captured — stop everything cleanly
+    isPlaying = false;
+    clearTimeout(playbackTimeout);
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    document.getElementById('loop-bar').style.width = '0%';
   }
+  // Otherwise playback was already running and continues uninterrupted
   updateButtons();
 }
 
@@ -234,8 +240,10 @@ function startCountInThenRecord() {
     if (beat === 0) {
       isCountingIn = false;
       isRecording = true;
+      isPlaying = true;
       loopDuration = getLoopDuration();
       loopStart = performance.now();
+      schedulePlayback();
       if (!rafId) animateLoopBar();
       updateButtons();
     }

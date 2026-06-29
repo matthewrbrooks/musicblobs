@@ -4,7 +4,8 @@
       "Bash(npm install *)",
       "Read(//Users/Matt/.nvm/alias/**)",
       "Read(//usr/local/**)",
-      "Read(//Users/Matt/**)"
+      "Read(//Users/Matt/**)",
+      "Bash(netlify deploy *)"
     ]
   }
 }

@@ -58,6 +58,7 @@ function checkKeyAreaHit(hits) {
 }
 
 function handlePointerDown(e) {
+  if (e.touches) e.preventDefault(); // stop iOS synthesising a mousedown after touchstart
   ensureAudio();
   const cx = e.clientX ?? e.touches?.[0]?.clientX;
   const cy = e.clientY ?? e.touches?.[0]?.clientY;

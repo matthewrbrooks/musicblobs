@@ -1,4 +1,4 @@
-const PASSWORD = import.meta.env.VITE_APP_PASSWORD;
+const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim();
 const AUTH_KEY = 'mb_auth';
 
 export function gate() {

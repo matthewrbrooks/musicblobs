@@ -1,4 +1,4 @@
-import { setTempo, setWonkiness, setQuantizeGrid, recBtnClick, playBtnClick, clearLoop } from '../loop.js';
+import { setTempo, setWonkiness, setQuantizeGrid, recBtnClick, playBtnClick, clearLoop, setSnapToGrid, snapToGrid } from '../loop.js';
 import { setMoveMode } from '../physics/physics.js';
 
 export function initControls() {
@@ -13,6 +13,7 @@ export function initControls() {
     btn.addEventListener('click', () => setMoveMode(btn.dataset.move));
   });
 
+  document.getElementById('snap-btn').addEventListener('click', () => setSnapToGrid(!snapToGrid));
   document.getElementById('rec-btn').addEventListener('click', recBtnClick);
   document.getElementById('play-btn').addEventListener('click', playBtnClick);
   document.getElementById('clear-btn').addEventListener('click', clearLoop);
