@@ -7,6 +7,8 @@ import { setFireEventCallback, updateButtons } from './loop.js';
 import { updateSampleIndicator } from './audio/sampler.js';
 import { initDispatch } from './interaction/dispatch.js';
 import { initControls } from './ui/controls.js';
+import { initFeedback, updateFeedback, markFeedbackActive } from './ui/feedback.js';
+import { initDebug } from './ui/debug.js';
 import { flashHit } from './ui/effects.js';
 import { blobPulse } from './blobs/shared.js';
 import { DRUM_FNS, DRUM_COLORS } from './audio/drums.js';
@@ -39,10 +41,13 @@ setFireEventCallback((type, index, ps) => {
       if (faceBlob.pulseNose) faceBlob.pulseNose();
     }
   }
+  markFeedbackActive();
 });
 
 initControls();
 initDispatch();
+initFeedback();
+initDebug();
 updateButtons();
 updateSampleIndicator();
 
@@ -64,6 +69,7 @@ function animate() {
 
   updateNameLabels();
   renderer.render(scene, camera);
+  updateFeedback();
 }
 
 animate();
