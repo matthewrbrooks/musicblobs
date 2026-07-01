@@ -1,6 +1,4 @@
 import { ensureAudio } from './context.js';
-import { markFeedbackActive } from '../ui/feedback.js';
-
 export function playWoodblock(accent) {
   const ac = ensureAudio();
   const t = ac.currentTime;
@@ -22,5 +20,4 @@ export function playWoodblock(accent) {
   const ng = ac.createGain(); ng.gain.value = accent ? 0.10 : 0.06;
   noise.connect(ng); ng.connect(ac.destination);
   noise.start(t); noise.stop(t + 0.02);
-  markFeedbackActive();
 }

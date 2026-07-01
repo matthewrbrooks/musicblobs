@@ -7,7 +7,8 @@ import { setFireEventCallback, updateButtons } from './loop.js';
 import { updateSampleIndicator } from './audio/sampler.js';
 import { initDispatch } from './interaction/dispatch.js';
 import { initControls } from './ui/controls.js';
-import { initFeedback, updateFeedback, markFeedbackActive } from './ui/feedback.js';
+import { initFeedback, updateFeedback } from './ui/feedback.js';
+import { markFeedbackActive } from './ui/feedbackBus.js';
 import { initDebug } from './ui/debug.js';
 import { flashHit } from './ui/effects.js';
 import { blobPulse } from './blobs/shared.js';
@@ -23,25 +24,29 @@ setFireEventCallback((type, index, ps) => {
     DRUM_FNS[index](ps);
     flashHit('drum', DRUM_COLORS[index]);
     blobPulse(drumBlob, index);
+    markFeedbackActive('drum');
   } else if (type === 'key') {
     playNote(NOTE_FREQS[index], ps);
     flashHit('key', NOTE_COLORS[index]);
     blobPulse(keyBlob, index);
+    markFeedbackActive('key');
   } else if (type === 'face') {
     playVocal(index, ps);
     flashHit('face', FACE_COLORS[index]);
     blobPulse(faceBlob, index);
+    markFeedbackActive('face');
   } else if (type === 'bass') {
     const freq = stretchToFreq(index / 10000);
     playBass(freq, ps, 0.5);
     blobPulse(bassipedeBlob, 0);
+    markFeedbackActive('bass');
   } else if (type === 'sample') {
     if (playSample(ps)) {
       flashHit('face', FACE_COLORS[2]);
       if (faceBlob.pulseNose) faceBlob.pulseNose();
+      markFeedbackActive('face');
     }
   }
-  markFeedbackActive();
 });
 
 initControls();

@@ -7,7 +7,7 @@ import { blobPulse } from '../blobs/shared.js';
 import { drumBlob, keyBlob, faceBlob, bassipedeBlob, worldToScreen } from '../scene.js';
 import { recordEvent } from '../loop.js';
 import { playBass, stretchToFreq, BASS_COLOR } from '../audio/bass.js';
-import { markFeedbackActive } from '../ui/feedback.js';
+import { markFeedbackActive } from '../ui/feedbackBus.js';
 
 export function triggerDrum(i, cx, cy) {
   DRUM_FNS[i]();
@@ -16,7 +16,7 @@ export function triggerDrum(i, cx, cy) {
   spawnRipple(cx, cy, DRUM_COLORS[i]);
   showLabel('drum', i, cx, cy);
   recordEvent('drum', i);
-  markFeedbackActive();
+  markFeedbackActive('drum');
 }
 
 export function triggerKey(i, cx, cy) {
@@ -26,7 +26,7 @@ export function triggerKey(i, cx, cy) {
   spawnRipple(cx, cy, NOTE_COLORS[i]);
   showLabel('key', i, cx, cy);
   recordEvent('key', i);
-  markFeedbackActive();
+  markFeedbackActive('key');
 }
 
 export function triggerFaceVocal(idx, cx, cy) {
@@ -36,7 +36,7 @@ export function triggerFaceVocal(idx, cx, cy) {
   spawnRipple(cx, cy, FACE_COLORS[idx]);
   showLabel('face', idx, cx, cy);
   recordEvent('face', idx);
-  markFeedbackActive();
+  markFeedbackActive('face');
 }
 
 export function triggerFaceNose(cx, cy) {
@@ -45,8 +45,7 @@ export function triggerFaceNose(cx, cy) {
   spawnRipple(cx, cy, FACE_COLORS[2]);
   showLabel('face', 2, cx, cy);
   if (faceBlob.pulseNose) faceBlob.pulseNose();
-  if (ok) recordEvent('sample', 0);
-  markFeedbackActive();
+  if (ok) { recordEvent('sample', 0); markFeedbackActive('face'); }
 }
 
 export function triggerBassPluck(brightness, cx, cy) {
@@ -59,7 +58,7 @@ export function triggerBassPluck(brightness, cx, cy) {
   spawnRipple(cx, cy, BASS_COLOR);
   showBassLabel(freq, cx, cy);
   recordEvent('bass', Math.round(stretchNorm * 10000));
-  markFeedbackActive();
+  markFeedbackActive('bass');
 }
 
 export function triggerRandomClick(blob, contactX, contactY) {

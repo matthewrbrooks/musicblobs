@@ -1,5 +1,8 @@
+import * as THREE from 'three';
 import { wonkiness } from '../loop.js';
 import { registerTweakable } from './debug.js';
+import { consumeFeedbackActive } from './feedbackBus.js';
+import { scene, camera, blobReg } from '../scene.js';
 
 // TWEAKABLES (let so the debug panel can mutate them)
 let FB_SCALE_PER_FRAME = 0.008;  // echo expands this fraction per frame at max wonk
@@ -12,16 +15,21 @@ let FB_MAX_SATURATE    = 2.8;    // max CSS saturate multiplier at full wonk
 let FB_MAX_BLUR_PX     = 1.2;    // max CSS blur at full wonk
 
 let feedbackCanvas, ctx, stageCanvas;
-let _soundThisFrame = false;
-
-export function markFeedbackActive() { _soundThisFrame = true; }
+let inRenderer, inCanvas;
 
 export function initFeedback() {
   stageCanvas = document.getElementById('stage-canvas');
+
   feedbackCanvas = document.createElement('canvas');
   feedbackCanvas.id = 'feedback-canvas';
   stageCanvas.parentElement.insertBefore(feedbackCanvas, stageCanvas);
   ctx = feedbackCanvas.getContext('2d');
+
+  // Separate renderer for the feedback "in" pass — renders only sounding blobs
+  inCanvas = document.createElement('canvas');
+  inRenderer = new THREE.WebGLRenderer({ canvas: inCanvas, alpha: true, antialias: false });
+  inRenderer.setPixelRatio(1);
+
   resizeFeedback();
   window.addEventListener('resize', resizeFeedback);
 
@@ -37,8 +45,11 @@ export function initFeedback() {
 
 export function resizeFeedback() {
   if (!feedbackCanvas) return;
-  feedbackCanvas.width  = stageCanvas.clientWidth;
-  feedbackCanvas.height = stageCanvas.clientHeight;
+  const w = stageCanvas.clientWidth;
+  const h = stageCanvas.clientHeight;
+  feedbackCanvas.width = w;
+  feedbackCanvas.height = h;
+  if (inRenderer) inRenderer.setSize(w, h, false);
 }
 
 export function updateFeedback() {
@@ -46,24 +57,22 @@ export function updateFeedback() {
   if (!w || !h) return;
 
   const wAbs = Math.abs(wonkiness);
-  // Effect only activates in the top half of the slider range
   const effectStrength = Math.max(0, (wAbs - 0.5) / 0.5);
 
   if (effectStrength < 0.01) {
     ctx.clearRect(0, 0, w, h);
     feedbackCanvas.style.filter = 'none';
-    _soundThisFrame = false;
+    consumeFeedbackActive();
     return;
   }
 
-  const scale = 1 + effectStrength * FB_SCALE_PER_FRAME;
-  const rotation = effectStrength * FB_TWIST_PER_FRAME;
+  const scale     = 1 + effectStrength * FB_SCALE_PER_FRAME;
+  const rotation  = effectStrength * FB_TWIST_PER_FRAME;
   const echoAlpha = 1 - (1 - FB_ECHO_ALPHA) * effectStrength;
 
-  // 1. Re-stamp existing feedback, scaled up + rotated + faded.
-  // Must use 'copy' not 'source-over': drawing a canvas onto itself with source-over
-  // restores alpha (composite math pushes it back toward 1). 'copy' replaces dst with
-  // src * globalAlpha so alpha genuinely decays each frame.
+  // 1. Re-stamp existing feedback, scaled + rotated + faded.
+  // 'copy' rather than 'source-over': self-draw with source-over restores alpha;
+  // 'copy' replaces dst with src * globalAlpha so alpha genuinely decays.
   ctx.save();
   ctx.globalAlpha = echoAlpha;
   ctx.globalCompositeOperation = 'copy';
@@ -73,25 +82,29 @@ export function updateFeedback() {
   ctx.drawImage(feedbackCanvas, -w / 2, -h / 2, w, h);
   ctx.restore();
 
-  // 2. Eat away alpha each frame so echoes fully vanish (transparent reveals dark background)
+  // 2. Eat away alpha so echoes fully vanish rather than accumulating
   ctx.globalAlpha = effectStrength * FB_FADE_ALPHA;
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillRect(0, 0, w, h);
 
-  // 3. Stamp current Three.js frame only when sound is playing
-  if (_soundThisFrame) {
+  // 3. Render only the sounding blob(s) into the in-buffer and stamp into echo
+  const activeBlobs = consumeFeedbackActive();
+  if (activeBlobs) {
+    blobReg.forEach(b => { b.obj.group.visible = activeBlobs.has(b.name); });
+    inRenderer.render(scene, camera);
+    blobReg.forEach(b => { b.obj.group.visible = true; });
+
     ctx.globalAlpha = effectStrength * FB_STAMP_ALPHA;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(stageCanvas, 0, 0, w, h);
+    ctx.drawImage(inCanvas, 0, 0, w, h);
   }
-  _soundThisFrame = false;
 
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
 
-  // 4. CSS filter: hue squashed into top half, sign tracks wonk sign
-  const hue = effectStrength * Math.sign(wonkiness) * FB_MAX_HUE_DEG;
-  const sat  = 1 + effectStrength * (FB_MAX_SATURATE - 1);
-  const blur = effectStrength * FB_MAX_BLUR_PX;
+  // 4. CSS filter: hue sign tracks wonk sign, all effects scale with effectStrength
+  const hue  = effectStrength * Math.sign(wonkiness) * FB_MAX_HUE_DEG;
+  const sat   = 1 + effectStrength * (FB_MAX_SATURATE - 1);
+  const blur  = effectStrength * FB_MAX_BLUR_PX;
   feedbackCanvas.style.filter = `hue-rotate(${hue}deg) saturate(${sat}) blur(${blur}px)`;
 }

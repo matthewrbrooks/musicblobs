@@ -5,7 +5,7 @@ import { buildFacey } from './blobs/facey.js';
 import { buildBassipede, BASS_INITIAL_LENGTH } from './blobs/bassipede.js';
 
 export const canvas = document.getElementById('stage-canvas');
-export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 export const scene = new THREE.Scene();
