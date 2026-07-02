@@ -1,0 +1,10 @@
+{
+  "Scale/frame": 0.017,
+  "Twist/frame": 0.0095,
+  "Echo alpha": 0.975,
+  "Stamp alpha": 0.96,
+  "Fade alpha": 0.015,
+  "Max hue deg": 25,
+  "Max saturate": 2.8,
+  "Max blur px": 1.2
+}

@@ -9,7 +9,7 @@ import { initDispatch } from './interaction/dispatch.js';
 import { initControls } from './ui/controls.js';
 import { initFeedback, updateFeedback } from './ui/feedback.js';
 import { markFeedbackActive } from './ui/feedbackBus.js';
-import { initDebug } from './ui/debug.js';
+import { initDebug, applySettings } from './ui/debug.js';
 import { flashHit } from './ui/effects.js';
 import { blobPulse } from './blobs/shared.js';
 import { DRUM_FNS, DRUM_COLORS } from './audio/drums.js';
@@ -55,6 +55,11 @@ initFeedback();
 initDebug();
 updateButtons();
 updateSampleIndicator();
+
+fetch('/settings.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(data => { if (data) applySettings(data); })
+  .catch(() => {});
 
 let lastFrame = performance.now();
 

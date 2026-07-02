@@ -380,6 +380,25 @@ input[type=range]::-webkit-slider-thumb{
   flex:1;
   width:auto;
 }
+.debug-save-btn{
+  display:block;
+  width:100%;
+  margin-top:12px;
+  padding:6px 0;
+  font-family:'Courier New',monospace;
+  font-size:0.58rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:#b070ff;
+  background:rgba(180,140,255,0.07);
+  border:1px solid rgba(180,140,255,0.28);
+  border-radius:4px;
+  cursor:pointer;
+}
+.debug-save-btn:hover{
+  background:rgba(180,140,255,0.16);
+  color:#d0a8ff;
+}
 
 /* ── Bottom hint ── */
 #hint{

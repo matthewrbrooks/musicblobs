@@ -5,6 +5,17 @@ export function registerTweakable(label, get, set, min, max, step = 0.001) {
   rows.push({ label, get, set, min, max, step });
 }
 
+export function applySettings(saved) {
+  rows.forEach(r => {
+    if (Object.prototype.hasOwnProperty.call(saved, r.label)) {
+      const v = parseFloat(saved[r.label]);
+      if (!isNaN(v)) r.set(v);
+    }
+  });
+  // Refresh sliders if the panel is already built
+  if (built) rebuildSliders();
+}
+
 export function initDebug() {
   panel = document.createElement('div');
   panel.id = 'debug-panel';
@@ -25,8 +36,29 @@ function toggle() {
   panel.style.display = visible ? 'block' : 'none';
 }
 
+function saveSettings() {
+  const data = {};
+  rows.forEach(r => { data[r.label] = r.get(); });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'settings.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+let sliderEls = [];
+
+function rebuildSliders() {
+  sliderEls.forEach(({ slider, val, get }) => {
+    slider.value = get();
+    val.textContent = fmt(get());
+  });
+}
+
 function buildPanel() {
   built = true;
+  sliderEls = [];
 
   const title = document.createElement('div');
   title.className = 'debug-title';
@@ -57,9 +89,16 @@ function buildPanel() {
       val.textContent = fmt(v);
     });
 
+    sliderEls.push({ slider, val, get });
     row.appendChild(lbl);
     row.appendChild(slider);
     row.appendChild(val);
     panel.appendChild(row);
   });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'debug-save-btn';
+  saveBtn.textContent = 'save settings.json';
+  saveBtn.addEventListener('click', saveSettings);
+  panel.appendChild(saveBtn);
 }
