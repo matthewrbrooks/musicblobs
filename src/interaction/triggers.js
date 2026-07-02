@@ -4,7 +4,7 @@ import { FACE_COLORS, VOCAL_INDICES, playVocal } from '../audio/vocals.js';
 import { playSample, sampleSlots } from '../audio/sampler.js';
 import { flashHit, spawnRipple, showLabel, showBassLabel } from '../ui/effects.js';
 import { blobPulse } from '../blobs/shared.js';
-import { drumBlob, keyBlob, faceBlob, bassipedeBlob, worldToScreen } from '../scene.js';
+import { drumBlob, keyBlob, faceBlob, bassipedeBlob } from '../scene.js';
 import { recordEvent } from '../loop.js';
 import { playBass, stretchToFreq, BASS_COLOR } from '../audio/bass.js';
 import { markFeedbackActive } from '../ui/feedbackBus.js';
@@ -61,18 +61,39 @@ export function triggerBassPluck(brightness, cx, cy) {
   markFeedbackActive('bass');
 }
 
+// Collision-triggered version: audio + blob pulse + record only.
+// Skips ripples, labels, and flash — those are user-tap feedback,
+// invisible at collision speed and expensive on DOM/layout.
 export function triggerRandomClick(blob, contactX, contactY) {
-  const s = worldToScreen(contactX, contactY);
   if (blob.name === 'drum') {
-    triggerDrum(Math.floor(Math.random() * 4), s.x, s.y);
+    const i = Math.floor(Math.random() * 4);
+    DRUM_FNS[i]();
+    blobPulse(drumBlob, i);
+    recordEvent('drum', i);
+    markFeedbackActive('drum');
   } else if (blob.name === 'key') {
-    triggerKey(Math.floor(Math.random() * 8), s.x, s.y);
+    const i = Math.floor(Math.random() * 8);
+    playNote(NOTE_FREQS[i]);
+    blobPulse(keyBlob, i);
+    recordEvent('key', i);
+    markFeedbackActive('key');
   } else if (blob.name === 'bass') {
-    triggerBassPluck(0.5 + Math.random() * 0.5, s.x, s.y);
+    const stretchNorm = bassipedeBlob.getStretchNorm();
+    playBass(stretchToFreq(stretchNorm), 1, 0.5 + Math.random() * 0.5);
+    blobPulse(bassipedeBlob, 0);
+    recordEvent('bass', Math.round(stretchNorm * 10000));
+    markFeedbackActive('bass');
   } else if (blob.name === 'face') {
     const pool = sampleSlots.length > 0 ? [...VOCAL_INDICES, 2] : VOCAL_INDICES;
     const idx = pool[Math.floor(Math.random() * pool.length)];
-    if (idx === 2) { triggerFaceNose(s.x, s.y); }
-    else { triggerFaceVocal(idx, s.x, s.y); }
+    if (idx === 2) {
+      if (playSample()) { recordEvent('sample', 0); markFeedbackActive('face'); }
+      if (faceBlob.pulseNose) faceBlob.pulseNose();
+    } else {
+      playVocal(idx);
+      blobPulse(faceBlob, idx);
+      recordEvent('face', idx);
+      markFeedbackActive('face');
+    }
   }
 }
