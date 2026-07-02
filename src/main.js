@@ -2,7 +2,7 @@ import './style.css';
 import { gate } from './gate.js';
 await gate();
 import { renderer, scene, camera, sceneClock, blobReg, drumBlob, keyBlob, faceBlob, bassipedeBlob, updateNameLabels } from './scene.js';
-import { updatePhysics } from './physics/physics.js';
+import { updatePhysics, initPhysics } from './physics/physics.js';
 import { setFireEventCallback, updateButtons } from './loop.js';
 import { updateSampleIndicator } from './audio/sampler.js';
 import { initDispatch } from './interaction/dispatch.js';
@@ -53,6 +53,7 @@ initControls();
 initDispatch();
 initFeedback();
 initDebug();
+initPhysics();
 updateButtons();
 updateSampleIndicator();
 

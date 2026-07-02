@@ -26,7 +26,7 @@ export function buildDrumbo() {
     new THREE.Vector3(-DRUMBO_PAD_SPACING, -DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
     new THREE.Vector3( DRUMBO_PAD_SPACING, -DRUMBO_PAD_SPACING, DRUMBO_PAD_Z),
   ];
-  const padColors = [0xff3366, 0xff8833, 0x33ddff, 0x66ff33];
+  const padColors = [0xff3366, 0x33ddff, 0xff8833, 0x66ff33];
   const padMeshes = [];
   padPositions.forEach((pos, i) => {
     const pg = new THREE.CylinderGeometry(DRUMBO_PAD_RADIUS, DRUMBO_PAD_RADIUS, DRUMBO_PAD_HEIGHT, 32);

@@ -1,9 +1,17 @@
 import { blobReg, viewHalfW, viewHalfH } from '../scene.js';
 import { triggerRandomClick } from '../interaction/triggers.js';
+import { registerTweakable } from '../ui/debug.js';
 
 export let moveMode = 'bounce';
 let draggedBlob = null;
 let collidingPairs = new Set();
+
+let COLLISION_DEBOUNCE_MS = 40;
+const lastCollisionTime = new Map();
+
+export function initPhysics() {
+  registerTweakable('Collision ms', () => COLLISION_DEBOUNCE_MS, v => { COLLISION_DEBOUNCE_MS = v; }, 0, 200, 1);
+}
 
 export function setDraggedBlob(b) { draggedBlob = b; }
 export function getDraggedBlob()  { return draggedBlob; }
@@ -71,8 +79,13 @@ export function updatePhysics(dt) {
           const nx = dx / dist, ny = dy / dist;
           const overlap = min - dist;
           if (isNew) {
-            triggerRandomClick(a, a.x + nx * a.radius, a.y + ny * a.radius);
-            triggerRandomClick(b, b.x - nx * b.radius, b.y - ny * b.radius);
+            const now = performance.now();
+            const last = lastCollisionTime.get(pairKey) ?? -Infinity;
+            if (now - last >= COLLISION_DEBOUNCE_MS) {
+              lastCollisionTime.set(pairKey, now);
+              triggerRandomClick(a, a.x + nx * a.radius, a.y + ny * a.radius);
+              triggerRandomClick(b, b.x - nx * b.radius, b.y - ny * b.radius);
+            }
           }
           if (a === draggedBlob) {
             b.x += nx * overlap; b.y += ny * overlap;
