@@ -297,38 +297,6 @@ input[type=range]::-webkit-slider-thumb{
   box-shadow:0 0 12px #ff773344;
 }
 
-/* Soundwave ripple from tap point */
-.ripple{
-  position:fixed;
-  pointer-events:none;
-  border-radius:50%;
-  border-style:solid;
-  transform:translate(-50%,-50%);
-  left:0;top:0;
-  width:9px;height:9px;
-  opacity:0;
-  z-index:50;
-  will-change:transform,opacity;
-}
-.ripple-1{animation:ripple-out-1 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
-.ripple-2{animation:ripple-out-2 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
-.ripple-3{animation:ripple-out-3 0.64s cubic-bezier(0.15,0.55,0.3,1) forwards}
-
-@keyframes ripple-out-1{
-  0%{width:7px;height:7px;opacity:0.95;border-width:2px}
-  60%{opacity:0.55;border-width:1.5px}
-  100%{width:130px;height:130px;opacity:0;border-width:0.5px}
-}
-@keyframes ripple-out-2{
-  0%{width:7px;height:7px;opacity:0.85;border-width:2px}
-  60%{opacity:0.48;border-width:1.5px}
-  100%{width:95px;height:95px;opacity:0;border-width:0.5px}
-}
-@keyframes ripple-out-3{
-  0%{width:7px;height:7px;opacity:0.75;border-width:2px}
-  60%{opacity:0.4;border-width:1.5px}
-  100%{width:65px;height:65px;opacity:0;border-width:0.5px}
-}
 
 /* ── Debug panel ── */
 #debug-panel{

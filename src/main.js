@@ -10,6 +10,7 @@ import { initControls } from './ui/controls.js';
 import { initFeedback, updateFeedback } from './ui/feedback.js';
 import { markFeedbackActive } from './ui/feedbackBus.js';
 import { initDebug, applySettings } from './ui/debug.js';
+import { initSceneEffects, tickSceneEffects } from './ui/sceneEffects.js';
 import { flashHit } from './ui/effects.js';
 import { blobPulse } from './blobs/shared.js';
 import { DRUM_FNS, DRUM_COLORS } from './audio/drums.js';
@@ -54,6 +55,7 @@ initDispatch();
 initFeedback();
 initDebug();
 initPhysics();
+initSceneEffects();
 updateButtons();
 updateSampleIndicator();
 
@@ -79,6 +81,7 @@ function animate() {
   });
 
   updateNameLabels();
+  tickSceneEffects();
   renderer.render(scene, camera);
   updateFeedback();
 }

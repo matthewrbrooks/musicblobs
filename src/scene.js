@@ -81,6 +81,20 @@ export function worldToScreen(x, y) {
   };
 }
 
+export function screenToWorld(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  const v = new THREE.Vector3(
+    ((cx - r.left) / r.width) * 2 - 1,
+    -((cy - r.top) / r.height) * 2 + 1,
+    0.5
+  );
+  v.unproject(camera);
+  const dir = v.sub(camera.position).normalize();
+  const dist = -camera.position.z / dir.z;
+  const p = camera.position.clone().add(dir.multiplyScalar(dist));
+  return { x: p.x, y: p.y };
+}
+
 export function updateNameLabels() {
   blobReg.forEach(b => {
     const el = document.getElementById('name-' + b.name);
