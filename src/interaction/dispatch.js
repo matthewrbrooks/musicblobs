@@ -65,7 +65,7 @@ function checkKeyAreaHit(hits) {
   if (ud.kind === 'key-pad') return { type: 'key-pad', idx: ud.index };
   if (ud.kind === 'body' && ud.blobName === 'key') {
     const lp = hit.object.worldToLocal(hit.point.clone());
-    if (Math.abs(lp.x) < 1.05 && Math.abs(lp.y) < 0.35 && lp.z > 0.5) return { type: 'key-strip' };
+    if (Math.abs(lp.x) < 2.1 && Math.abs(lp.y) < 0.9 && lp.z > 0.5) return { type: 'key-strip' };
   }
   return null;
 }

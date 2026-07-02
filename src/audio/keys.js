@@ -1,8 +1,8 @@
 import { ensureAudio, getReverb } from './context.js';
 
-export const NOTE_FREQS  = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
-export const NOTE_NAMES  = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
-export const NOTE_COLORS = ['#cc66ff','#9966ff','#6699ff','#44bbff','#44ffcc','#88ff66','#ffee44','#ff8844'];
+export const NOTE_FREQS  = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33];
+export const NOTE_NAMES  = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D'];
+export const NOTE_COLORS = ['#cc66ff','#9966ff','#6699ff','#44bbff','#44ffcc','#88ff66','#ffee44','#ff8844','#ff5533'];
 
 export function playNote(freq, ps = 1) {
   const ac = ensureAudio();
