@@ -3,6 +3,7 @@ import { wonkiness } from '../loop.js';
 import { registerTweakable } from './debug.js';
 import { consumeFeedbackActive } from './feedbackBus.js';
 import { scene, camera, blobReg } from '../scene.js';
+import { flashMesh } from './sceneEffects.js';
 
 // TWEAKABLES (let so the debug panel can mutate them)
 let FB_SCALE_PER_FRAME = 0.008;  // echo expands this fraction per frame at max wonk
@@ -91,8 +92,11 @@ export function updateFeedback() {
   const activeBlobs = consumeFeedbackActive();
   if (activeBlobs) {
     blobReg.forEach(b => { b.obj.group.visible = activeBlobs.has(b.name); });
+    const flashWasVisible = flashMesh && flashMesh.visible;
+    if (flashMesh) flashMesh.visible = false;
     inRenderer.render(scene, camera);
     blobReg.forEach(b => { b.obj.group.visible = true; });
+    if (flashMesh && flashWasVisible) flashMesh.visible = true;
 
     ctx.globalAlpha = effectStrength * FB_STAMP_ALPHA;
     ctx.globalCompositeOperation = 'source-over';

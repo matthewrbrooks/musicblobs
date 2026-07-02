@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { scene } from '../scene.js';
 import { screenToWorld } from '../scene.js';
+import { registerTweakable } from './debug.js';
 
 // 3 rings per tap × 8 concurrent taps with headroom
 const POOL_SIZE = 24;
@@ -16,8 +17,9 @@ const RING_CONFIGS = [
 const pool = [];
 let poolIdx = 0;
 
-let flashMesh = null;
+export let flashMesh = null;
 let flashTimeout = null;
+let FLASH_OPACITY = 0.09;
 
 export function initSceneEffects() {
   // All 24 ring meshes share one geometry — geometry is read-only data
@@ -52,6 +54,8 @@ export function initSceneEffects() {
   flashMesh.position.set(0, 0, 4); // in front of camera (z=5), within near/far
   flashMesh.visible = false;
   scene.add(flashMesh);
+
+  registerTweakable('Flash opacity', () => FLASH_OPACITY, v => { FLASH_OPACITY = v; }, 0, 0.3, 0.01);
 }
 
 export function spawnRipple(cx, cy, colorStr) {
@@ -76,7 +80,7 @@ export function flashHit(_which, colorStr) {
   if (!flashMesh) return;
   clearTimeout(flashTimeout);
   flashMesh.material.color.set(colorStr);
-  flashMesh.material.opacity = 0.09;
+  flashMesh.material.opacity = FLASH_OPACITY;
   flashMesh.visible = true;
   flashTimeout = setTimeout(() => { flashMesh.visible = false; }, 80);
 }
