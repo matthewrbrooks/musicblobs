@@ -51,8 +51,9 @@ export function buildKeebo() {
   HEX_POSITIONS.forEach(([x, y], i) => {
     const noteIdx = KEY_NOTE_INDICES[i];
     const mat = new THREE.MeshStandardMaterial({
-      color: keyColors[noteIdx], roughness: 0.25, metalness: 0.7,
-      emissive: keyColors[noteIdx], emissiveIntensity: 0.7
+      color: keyColors[noteIdx], roughness: 0.55, metalness: 0.3,
+      emissive: keyColors[noteIdx], emissiveIntensity: 0.15,
+      flatShading: true
     });
     const key = new THREE.Mesh(hexGeo, mat);
     // rotation.x = π/2: hex cap faces +Z; rotation.z = π/6: pointy-top orientation
@@ -92,7 +93,7 @@ export function buildKeebo() {
       if (!key) return;
       key.material.emissiveIntensity = 3.5;
       key.position.z = KEY_Z_PRESSED;
-      setTimeout(() => { key.material.emissiveIntensity = 0.7; key.position.z = KEY_Z; }, 200);
+      setTimeout(() => { key.material.emissiveIntensity = 0.15; key.position.z = KEY_Z; }, 200);
     },
     tick(t) {
       group.rotation.y = Math.sin(t * 0.22) * 0.18;
